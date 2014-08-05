@@ -48,6 +48,14 @@ OpenAssessment.GradeView.prototype = {
             eventObject.preventDefault();
             view.submitFeedbackOnAssessment();
         });
+
+        // Initialize track changes
+        var trackChangesSelector = $(".submission__answer__display__content__edited", this.element);
+        if (trackChangesSelector.size() > 0) {
+            var trackChangesElement = trackChangesSelector.get(0);
+            this.trackchanges = new OpenAssessment.TrackchangesView(trackChangesElement);
+            view.baseView.displayTrackchangesView();
+        }
     },
 
     /**

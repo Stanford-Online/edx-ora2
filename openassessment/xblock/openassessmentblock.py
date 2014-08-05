@@ -140,6 +140,12 @@ class OpenAssessmentBlock(
         help="A prompt to display to a student (plain text)."
     )
 
+    track_changes = String(
+        default="",
+        scope=Scope.content,
+        help="URL to track changes library, currently ICE"
+    )
+
     rubric_criteria = List(
         default=DEFAULT_RUBRIC_CRITERIA,
         scope=Scope.content,
@@ -263,6 +269,13 @@ class OpenAssessmentBlock(
         frag = Fragment(template.render(context))
         frag.add_css(load("static/css/openassessment.css"))
         frag.add_javascript(load("static/js/openassessment-lms.min.js"))
+
+        trackchanges_fragments = set([x['track_changes'] for x in ui_models if x.get('track_changes', None)])
+        if any(trackchanges_fragments):
+            for tr_frag in trackchanges_fragments:
+                frag.add_javascript_url(tr_frag) # TODO: move the URL to course advanced setting
+            frag.add_css(load("static/css/trackchanges.css"))
+        
         frag.initialize_js('OpenAssessmentBlock')
         return frag
 
@@ -337,6 +350,10 @@ class OpenAssessmentBlock(
 
         """
         return [
+            (
+                "OpenAssessmentBlock Track Changes",
+                load('static/xml/track_changes_example.xml')
+            ),
             (
                 "OpenAssessmentBlock Unicode",
                 load('static/xml/unicode.xml')
