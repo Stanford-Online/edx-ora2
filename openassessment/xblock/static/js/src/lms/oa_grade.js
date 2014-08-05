@@ -38,6 +38,8 @@ OpenAssessment.GradeView.prototype = {
     Install event handlers for the view.
     **/
     installHandlers: function() {
+        var trackChangesSelector;
+        var trackChangesElement;
         // Install a click handler for collapse/expand
         var sel = $('#openassessment__grade', this.element);
         this.baseView.setUpCollapseExpand(sel);
@@ -48,6 +50,14 @@ OpenAssessment.GradeView.prototype = {
             eventObject.preventDefault();
             view.submitFeedbackOnAssessment();
         });
+
+        // Initialize track changes
+        trackChangesSelector = $(".submission__answer__display__content__edited", this.element);
+        if (trackChangesSelector.size() > 0) {
+            trackChangesElement = trackChangesSelector.get(0);
+            this.trackChanges = new OpenAssessment.TrackChangesView(trackChangesElement);
+            view.baseView.displayTrackChangesView();
+        }
     },
 
     /**

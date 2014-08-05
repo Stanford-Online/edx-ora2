@@ -90,6 +90,8 @@ OpenAssessment.PeerView.prototype = {
     installHandlers: function(isContinuedAssessment) {
         var sel = $('#openassessment__peer-assessment', this.element);
         var view = this;
+        var trackChangesSelector;
+        var trackChangesElement;
 
         // Install a click handler for collapse/expand
         this.baseView.setUpCollapseExpand(sel);
@@ -99,6 +101,14 @@ OpenAssessment.PeerView.prototype = {
         if (rubricSelector.size() > 0) {
             var rubricElement = rubricSelector.get(0);
             this.rubric = new OpenAssessment.Rubric(rubricElement);
+        }
+
+        // Initialize track changes
+        trackChangesSelector = $("#track-changes-content", this.element);
+        if (trackChangesSelector.size() > 0) {
+            trackChangesElement = trackChangesSelector.get(0);
+            this.trackChanges = new OpenAssessment.TrackChangesView(trackChangesElement);
+            view.baseView.enableTrackChangesView();
         }
 
         // Install a change handler for rubric options to enable/disable the submit button
@@ -189,6 +199,10 @@ OpenAssessment.PeerView.prototype = {
     **/
     peerAssessRequest: function(successFunction) {
         var view = this;
+        var editedContent = "";
+        if (this.trackChanges) {
+            editedContent = this.trackChanges.getEditedContent();
+        }
         view.baseView.toggleActionError('peer', null);
         view.peerSubmitEnabled(false);
 
@@ -196,7 +210,8 @@ OpenAssessment.PeerView.prototype = {
         this.server.peerAssess(
             this.rubric.optionsSelected(),
             this.rubric.criterionFeedback(),
-            this.rubric.overallFeedback()
+            this.rubric.overallFeedback(),
+            editedContent
         ).done(
             successFunction
         ).fail(function(errMsg) {
