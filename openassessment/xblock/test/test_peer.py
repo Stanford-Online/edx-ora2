@@ -273,6 +273,7 @@ class TestPeerAssessmentRender(XBlockHandlerTestCase):
             'must_grade': 5,
             'review_num': 1,
             'allow_latex': False,
+            'track_changes': '',
         }
         self._assert_path_and_context(
             xblock, 'openassessmentblock/peer/oa_peer_unavailable.html', expected_context
@@ -289,6 +290,7 @@ class TestPeerAssessmentRender(XBlockHandlerTestCase):
             'must_grade': 5,
             'review_num': 1,
             'allow_latex': False,
+            'track_changes': '',
         }
         self._assert_path_and_context(
             xblock, 'openassessmentblock/peer/oa_peer_closed.html', expected_context
@@ -305,6 +307,7 @@ class TestPeerAssessmentRender(XBlockHandlerTestCase):
             'must_grade': 5,
             'review_num': 1,
             'allow_latex': False,
+            'track_changes': '',
         }
         self._assert_path_and_context(
             xblock, 'openassessmentblock/peer/oa_peer_unavailable.html', expected_context
@@ -324,6 +327,7 @@ class TestPeerAssessmentRender(XBlockHandlerTestCase):
             'review_num': 1,
             'submit_button_text': 'submit your assessment & move to response #2',
             'allow_latex': False,
+            'track_changes': '',
         }
         self._assert_path_and_context(
             xblock, 'openassessmentblock/peer/oa_peer_waiting.html',
@@ -364,6 +368,7 @@ class TestPeerAssessmentRender(XBlockHandlerTestCase):
             'peer_file_url': '',
             'submit_button_text': 'submit your assessment & move to response #2',
             'allow_latex': False,
+            'track_changes': '',
         }
         self._assert_path_and_context(
             xblock, 'openassessmentblock/peer/oa_peer_assessment.html',
@@ -408,6 +413,7 @@ class TestPeerAssessmentRender(XBlockHandlerTestCase):
             'review_num': 1,
             'submit_button_text': 'submit your assessment & move to response #2',
             'allow_latex': False,
+            'track_changes': '',
         }
         self._assert_path_and_context(
             xblock, 'openassessmentblock/peer/oa_peer_closed.html',
@@ -444,6 +450,7 @@ class TestPeerAssessmentRender(XBlockHandlerTestCase):
             'review_num': 1,
             'submit_button_text': 'submit your assessment & move to response #2',
             'allow_latex': False,
+            'track_changes': '',
         }
         self._assert_path_and_context(
             xblock, 'openassessmentblock/peer/oa_peer_closed.html',
@@ -472,6 +479,7 @@ class TestPeerAssessmentRender(XBlockHandlerTestCase):
             'must_grade': 5,
             'review_num': 1,
             'allow_latex': False,
+            'track_changes': '',
         }
 
         self._assert_path_and_context(
@@ -502,6 +510,7 @@ class TestPeerAssessmentRender(XBlockHandlerTestCase):
              'rubric_criteria': xblock.rubric_criteria,
              'submit_button_text': 'Submit your assessment & review another response',
              'allow_latex': False,
+             'track_changes': '',
         }
         self._assert_path_and_context(
             xblock, 'openassessmentblock/peer/oa_peer_turbo_mode_waiting.html',
@@ -530,6 +539,7 @@ class TestPeerAssessmentRender(XBlockHandlerTestCase):
              'rubric_criteria': xblock.rubric_criteria,
              'submit_button_text': 'Submit your assessment & review another response',
              'allow_latex': False,
+            'track_changes': '',
         }
         self._assert_path_and_context(
             xblock, 'openassessmentblock/peer/oa_peer_turbo_mode.html',
@@ -552,6 +562,7 @@ class TestPeerAssessmentRender(XBlockHandlerTestCase):
             'rubric_criteria': xblock.rubric_criteria,
             'submit_button_text': 'Submit your assessment & review another response',
             'allow_latex': False,
+            'track_changes': '',
         }
         self._assert_path_and_context(
             xblock, 'openassessmentblock/peer/oa_peer_unavailable.html',
@@ -780,3 +791,66 @@ class TestPeerAssessHandler(XBlockHandlerTestCase):
             # Retrieve the peer assessment
             retrieved_assessment = peer_api.get_assessments(submission['uuid'], scored_only=False)[0]
             return submission['uuid'], retrieved_assessment
+
+    @scenario('data/grade_scenario.xml', user_id='Bob')
+    def test_track_changes(self, xblock):
+        student_item = xblock.get_student_item_dict()
+
+        sally_student_item = copy.deepcopy(student_item)
+        sally_student_item['student_id'] = "Sally"
+        sallys_answer = u"Sally's answer"
+        sally_submission = xblock.create_submission(sally_student_item, sallys_answer)
+
+        # Hal comes and submits a response.
+        hal_student_item = copy.deepcopy(student_item)
+        hal_student_item['student_id'] = "Hal"
+        hals_answer = u"Hal's answer"
+        hal_submission = xblock.create_submission(hal_student_item, hals_answer)
+
+        number_of_required_grades = 1
+        track_changes_edits_hal = sallys_answer + u'<span class="ins"> is wrong!</span>'
+        track_changes_edits_sally = hals_answer + u'<span class="ins"> is wrong!</span>'
+
+        # Now Hal will assess Sally.
+        assessment = copy.deepcopy(self.ASSESSMENT)
+        peer_api.get_submission_to_assess(hal_submission['uuid'], 1)
+        peer_api.create_assessment(
+            hal_submission['uuid'],
+            hal_student_item['student_id'],
+            assessment['options_selected'],
+            assessment['criterion_feedback'],
+            assessment['overall_feedback'],
+            {'criteria': xblock.rubric_criteria},
+            number_of_required_grades,
+            track_changes_edits=track_changes_edits_hal,
+        )
+
+        # Now Sally will assess Hal.
+        assessment = copy.deepcopy(self.ASSESSMENT)
+        peer_api.get_submission_to_assess(sally_submission['uuid'], 1)
+        peer_api.create_assessment(
+            sally_submission['uuid'],
+            sally_student_item['student_id'],
+            assessment['options_selected'],
+            assessment['criterion_feedback'],
+            assessment['overall_feedback'],
+            {'criteria': xblock.rubric_criteria},
+            number_of_required_grades,
+            track_changes_edits=track_changes_edits_sally,
+        )
+
+        # If Over Grading is on, this should now return Sally or Hal's response to Bob.
+        submission = xblock.create_submission(student_item, u"Bob's answer")
+        workflow_info = xblock.get_workflow_info()
+        self.assertEqual(workflow_info["status"], u'peer')
+
+        # Validate Submission Rendering.
+        request = namedtuple('Request', 'params')
+        request.params = {}
+        peer_response = xblock.render_peer_assessment(request)
+        self.assertIsNotNone(peer_response)
+        self.assertNotIn(submission["answer"]["text"].encode('utf-8'), peer_response.body)
+
+        # Validate Peer Rendering.
+        self.assertTrue("Sally".encode('utf-8') in peer_response.body or
+            "Hal".encode('utf-8') in peer_response.body)

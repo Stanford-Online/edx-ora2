@@ -103,6 +103,14 @@ OpenAssessment.PeerView.prototype = {
             this.rubric = new OpenAssessment.Rubric(rubricElement);
         }
 
+        // Initialize track changes
+        var trackChangesSelector = $("#track-changes-content", this.element);
+        if (trackChangesSelector.size() > 0) {
+            var trackChangesElement = trackChangesSelector.get(0);
+            this.trackChanges = new OpenAssessment.TrackChangesView(trackChangesElement);
+            view.baseView.enableTrackChangesView();
+        }
+
         // Install a change handler for rubric options to enable/disable the submit button
         if (this.rubric !== null) {
             this.rubric.canSubmitCallback($.proxy(view.peerSubmitEnabled, view));
@@ -192,6 +200,10 @@ OpenAssessment.PeerView.prototype = {
     peerAssessRequest: function(successFunction) {
         var view = this;
         var uuid = $('#openassessment__peer-assessment').data('submission-uuid');
+        var editedContent = '';
+        if (this.trackChanges) {
+            editedContent = this.trackChanges.getEditedContent();
+        }
 
         view.baseView.toggleActionError('peer', null);
         view.peerSubmitEnabled(false);
@@ -201,7 +213,8 @@ OpenAssessment.PeerView.prototype = {
             this.rubric.optionsSelected(),
             this.rubric.criterionFeedback(),
             this.rubric.overallFeedback(),
-            uuid
+            uuid,
+            editedContent
         ).done(
             successFunction
         ).fail(function(errMsg) {
