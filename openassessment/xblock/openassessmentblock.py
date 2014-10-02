@@ -390,6 +390,10 @@ class OpenAssessmentBlock(
                 load('static/xml/track_changes_example.xml')
             ),
             (
+                "OpenAssessmentBlock File Upload",
+                load('static/xml/file_upload.xml')
+            ),
+            (
                 "OpenAssessmentBlock Unicode",
                 load('static/xml/unicode.xml')
             ),
