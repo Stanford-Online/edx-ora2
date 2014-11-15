@@ -130,7 +130,34 @@
             {%  endfor %}
         </div>
         {% endif %}
-
+        {% if problem_closed or scores.points_earned %}
+        <div class="staff-info__status ui-staff__content__section">
+            <h2 class="title">Scores</h2>
+            <table class="staff-info__status__table">
+                <thead>
+                <tr>
+                    <th abbr="Peer Score" scope="col">{% trans "Peer Score" %}</th>
+                    <th abbr="Possible Score" scope="col">{% trans "Possible Score" %}</th>
+                    <th abbr="Override Score" scope="col">{% trans "Override Score" %}</th>
+                </tr>
+                </thead>
+                
+                <tbody>
+                    <tr>
+                        <td id="openassessment_points_earned" class="label">{{ scores.points_earned }}</td>
+                        <td id="openassessment_points_possible" class="label">{{ scores.points_possible }}</td>
+                        <td id="openassessment_points_override" class="label">{{ scores.points_override }}</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <form id="openassessment_override_score_form">
+                <label class="label" for="openassessment_override_score">Override Score Earned - set to</label>
+                <input id="openassessment_override_score" class="value" type="text" maxlength="2">
+                <a aria-role="button" id="submit_override_score" class="action--submit"><span class="copy">{% trans "Submit" %}</span></a>
+            </form>
+        </div>
+        {% endif %}
         {% if submitted_assessments %}
         <div class="staff-info__status ui-staff__content__section">
             <h3 class="title">{% trans "Peer Assessments Completed by This Student" %}</h3>

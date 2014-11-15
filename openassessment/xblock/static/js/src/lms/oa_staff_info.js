@@ -71,7 +71,41 @@ OpenAssessment.StaffInfoView.prototype = {
                 view.showLoadError('student_info');
         });
     },
+    
+    /**
+     Upon request, submits an override grade.
+     **/
+    peerScoreOverride: function() {
+    	var sel = $('#openassessment__staff-info', this.element);
+    	var student_id = sel.find('#openassessment__student_id').val();
+    	var override_score = sel.find('#openassessment_override_score').val();
+    	var points_possible = sel.find('#openassessment_points_possible').html();
+    	this.server.peerScoreOverride(student_id, points_possible, override_score).done(
+            function(override_score) {
+                $('#openassessment_points_override', this.element).html(override_score);
+            }
+        ).fail(function(errMsg) {
+                $('#openassessment_points_override', this.element).html(errMsg);
+        });
+    },
+    
+    ScoreOverrideHandler: function() {
+        var sel = $('#openassessment__student-info', this.element);
+        var view = this;
 
+        if (sel.length <= 0) {
+            return;
+        }
+        
+        // Click handler for overriding a student's peer score.
+        sel.find('#submit_override_score').live('click',
+        	function(eventObject) {
+        		eventObject.preventDefault();
+        		view.peerScoreOverride();
+        	}
+        );
+    },
+    
     /**
      Install event handlers for the view.
      **/
@@ -118,6 +152,15 @@ OpenAssessment.StaffInfoView.prototype = {
                 view.rescheduleUnfinishedTasks();
             }
         );
+        
+        // Install a click handler for peer score overrides
+        sel.find('#submit_student_id').click(
+                function(eventObject) {
+                    eventObject.preventDefault();
+                    view.ScoreOverrideHandler();
+                }
+            );
+        
     },
 
     /**

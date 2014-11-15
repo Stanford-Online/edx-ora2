@@ -21,7 +21,11 @@ from openassessment.assessment.serializers import (
 from openassessment.assessment.errors import (
     PeerAssessmentRequestError, PeerAssessmentWorkflowError, PeerAssessmentInternalError
 )
+from openassessment.xblock.data_conversion import (
+    create_rubric_dict
+)
 from submissions import api as sub_api
+
 
 logger = logging.getLogger("openassessment.assessment.api.peer")
 
@@ -853,6 +857,105 @@ def set_assessment_feedback(feedback_dict):
         logger.exception(msg)
         raise PeerAssessmentInternalError(msg)
 
+
+def get_data_for_override_score(submission_uuid, student_item, rubric_dict):
+    """
+    Gets the data needed to render the score override section of the student data page.
+    
+    Args:
+        submission_uuid (string): UUID of the student's submission
+        student_item (dict): The dictionary representation of a student item.
+        rubric_dict (dict): The dictionary representation of a rubric
+        
+    Returns:
+        scores (dict): points_earned, pointed_possible, points_override
+    """
+    scores = {}
+    score_data = sub_api.get_latest_score_for_submission(submission_uuid)
+    if score_data:
+        scores['points_earned'] = score_data.get('points_earned', None)
+        scores['points_possible'] = score_data.get('points_possible', None)
+
+    # If there is no Score, retrieve points_possible from the rubric as there may not be any assessments yet.
+    if not scores.get('points_possible', None):
+        try:
+            rubric = rubric_from_dict(rubric_dict)
+            points_possible = rubric.points_possible
+        except InvalidRubric:
+            points_possible = None
+
+        scores['points_possible'] = points_possible
+    latest_override_score = sub_api.get_score_override(student_item)
+    if latest_override_score:
+        scores['points_override'] = latest_override_score['points_earned']
+
+    return scores
+
+
+def validate_override_data(points_possible, override_score):
+    """
+    Validate the data provided to the peer_score_override function.
+
+    Args:
+        points_possible (string): Max points for this question.
+        override grade (string): Score provided by the instructor as an override.
+
+    Returns:
+        error message if data check failed.
+    """
+    # If points possible is not a float then the student doesn't yet have a score.
+    try:
+        float(points_possible)
+    except:
+        return 'An error was encountered creating the override score.'
+    
+    try:
+        float(override_score)
+    except:
+        return 'Check you have entered a valid score.'
+
+    if float(override_score) > float(points_possible):
+        return 'You have entered a score greater than the maximum possible.'
+
+
+def score_override(student_item_dict, points_possible, override_score):
+    """
+    Given a student's ID, override the regular score with a score provided by the instructor. 
+
+    Args:
+        student_item_dict (dict): The dictionary representation of a student item.
+        points_possible (string): The max allowed points for this submission.
+        override_score (string): The override score given by the instructor
+    """
+
+    if student_item_dict.get('student_id', None):
+        msg = validate_override_data(points_possible, override_score)
+        if msg:
+            return {
+                'success': False,
+                'msg': msg,
+            }
+
+        try:
+            sub_api.score_override(student_item_dict, points_possible, override_score)
+            # Override score was created successfully
+            return {
+                'success': True,
+                'override_score': override_score,
+            }
+    
+        except:
+            return {
+                'success': False,
+                'msg': 'There was a problem creating the override score.',
+            }
+    # student_id didn't get passed
+    else:
+        return {
+            'success': False,
+            'msg': 'An error was encountered. Please try again.',
+        }
+    
 
 def _log_assessment(assessment, scorer_workflow):
     """

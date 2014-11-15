@@ -24,7 +24,7 @@ from openassessment.assessment.api import self as self_api
 from openassessment.assessment.api import ai as ai_api
 from openassessment.fileupload import api as file_api
 from openassessment.workflow import api as workflow_api
-
+from openassessment.assessment.serializers import rubric_from_dict, InvalidRubric
 
 logger = logging.getLogger(__name__)
 
@@ -202,6 +202,25 @@ class StaffInfoMixin(object):
                 'msg': self._(u"Example Based Assessment is not configured for this location.")
             }
 
+    @XBlock.json_handler
+    @require_course_staff("STUDENT_INFO")
+    def peer_score_override(self, data, suffix=''):
+        """
+        Create an override score for peer assessments
+        
+        Must be course staff to perform this function.
+        """
+        student_id = data['student_id']
+        points_possible = data['points_possible']
+        override_score = data['override_score']
+
+        # Construct student_item dict
+        student_item_dict = self.get_student_item_dict()
+        student_item_dict['student_id'] = student_id
+        
+        return peer_api.score_override(student_item_dict, points_possible, override_score)
+
+
     @XBlock.handler
     @require_course_staff("STUDENT_INFO")
     def render_student_info(self, data, suffix=''):  # pylint: disable=W0613
@@ -234,9 +253,11 @@ class StaffInfoMixin(object):
         submission_uuid = None
         submission = None
         assessment_steps = self.assessment_steps
+        student_item = self.get_student_item_dict()
+        scores = {}
+        problem_closed = None
 
         if student_id:
-            student_item = self.get_student_item_dict()
             student_item['student_id'] = student_id
 
             # If there is a submission available for the requested student, present
@@ -267,8 +288,16 @@ class StaffInfoMixin(object):
         submitted_assessments = []
 
         if "peer-assessment" in assessment_steps:
-            peer_assessments = peer_api.get_assessments(submission_uuid)
+            peer_assessments = peer_api.get_assessments('123456') #(submission_uuid) #   get_assessments('cf57b452-430d-11e4-a1b1-021e90aa5731')
             submitted_assessments = peer_api.get_submitted_assessments(submission_uuid, scored_only=False)
+
+            # Get the data we need for instructor override of the student's score
+            rubric_dict = create_rubric_dict(self.prompt, self.rubric_criteria_with_labels)
+            scores = peer_api.get_data_for_override_score(submission_uuid,
+                student_item,
+                rubric_dict,
+            )
+            problem_closed, __, __, __ = self.is_closed(step='peer-assessment', course_staff=False)
 
         if "self-assessment" in assessment_steps:
             self_assessment = self_api.get_assessment(submission_uuid)
@@ -288,6 +317,8 @@ class StaffInfoMixin(object):
             'self_assessment': self_assessment,
             'example_based_assessment': example_based_assessment,
             'rubric_criteria': copy.deepcopy(self.rubric_criteria_with_labels),
+            'scores': scores,
+            'problem_closed': problem_closed,
         }
 
         if peer_assessments or self_assessment or example_based_assessment:
