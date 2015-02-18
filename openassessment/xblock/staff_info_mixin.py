@@ -210,13 +210,13 @@ class StaffInfoMixin(object):
 
         Must be course staff to perform this function.
         """
-        student_id = data.get('student_id')
+        student_username = data.get('student_username')
         points_possible = data.get('points_possible')
         points_override = data.get('points_override')
 
         # Construct student_item dict
         student_item_dict = self.get_student_item_dict()
-        student_item_dict['student_id'] = student_id
+        student_item_dict['student_id'] = self.get_anonymous_user_id(student_username, self.course_id)
 
         return peer_api.score_override(student_item_dict, points_override, points_possible)
 

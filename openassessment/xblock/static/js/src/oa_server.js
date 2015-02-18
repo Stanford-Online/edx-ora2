@@ -145,14 +145,14 @@ if (typeof OpenAssessment.Server == "undefined" || !OpenAssessment.Server) {
             A JQuery promise, which resolves with the HTML of the rendered XBlock
             and fails with an error message.
          **/
-        overridePeerScore: function(studentId, pointsOverride, pointsPossible) {
+        overridePeerScore: function(studentUsername, pointsOverride, pointsPossible) {
             var url = this.url('peer_score_override');
             return $.Deferred(function(defer) {
                 $.ajax({
                     url: url,
                     type: 'POST',
                     data: JSON.stringify({
-                        student_id: studentId,
+                        student_username: studentUsername,
                         points_override: pointsOverride,
                         points_possible: pointsPossible
                     }),

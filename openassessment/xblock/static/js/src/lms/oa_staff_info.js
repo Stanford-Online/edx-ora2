@@ -78,10 +78,10 @@ OpenAssessment.StaffInfoView.prototype = {
      **/
     overridePeerScore: function() {
     	var sel = $('#openassessment__staff-info', this.element);
-    	var studentId = sel.find('#openassessment__student_id').val();
+    	var studentUsername = sel.find('#openassessment__student_username').val();
     	var pointsOverride = sel.find('#openassessment_override_score').val();
     	var pointsPossible = sel.find('#openassessment_points_possible').text();
-    	this.server.overridePeerScore(studentId, pointsOverride, pointsPossible).done(
+    	this.server.overridePeerScore(studentUsername, pointsOverride, pointsPossible).done(
             function(pointsOverride) {
                 $('#openassessment_points_override', this.element).text(pointsOverride);
             }
