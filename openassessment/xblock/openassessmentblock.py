@@ -91,7 +91,6 @@ def load(path):
 
 @XBlock.needs("i18n")
 class OpenAssessmentBlock(
-    XBlock,
     MessageMixin,
     SubmissionMixin,
     PeerAssessmentMixin,
@@ -102,7 +101,8 @@ class OpenAssessmentBlock(
     StaffInfoMixin,
     WorkflowMixin,
     StudentTrainingMixin,
-    LmsCompatibilityMixin
+    LmsCompatibilityMixin,
+    XBlock,
 ):
     """Displays a prompt and provides an area where students can compose a response."""
 
@@ -273,7 +273,13 @@ class OpenAssessmentBlock(
         template = get_template("openassessmentblock/oa_base.html")
         context = Context(context_dict)
         frag = Fragment(template.render(context))
-        frag.add_css(load("static/css/openassessment.css"))
+
+        i18n_service = self.runtime.service(self, 'i18n')
+        if hasattr(i18n_service, 'get_language_bidi') and i18n_service.get_language_bidi():
+            frag.add_css(load("static/css/openassessment-rtl.css"))
+        else:
+            frag.add_css(load("static/css/openassessment-ltr.css"))
+
         frag.add_javascript(load("static/js/openassessment-lms.min.js"))
 
         track_changes_fragments = set([x['track_changes'] for x in ui_models if x.get('track_changes', None)])
