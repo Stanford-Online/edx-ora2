@@ -51,7 +51,10 @@ class GradeMixin(object):
         # Render the grading section based on the status of the workflow
         # but give precedence to showing the override score if it is set.
         try:
-            if workflow.get('override_score'):
+            if status == "cancelled":
+                path = 'openassessmentblock/grade/oa_grade_cancelled.html'
+                context = {'score': workflow['score']}
+            elif workflow.get('override_score'):
                 path, context = self.render_grade_override(workflow['override_score'])
             elif status == "done":
                 path, context = self.render_grade_complete(workflow)
