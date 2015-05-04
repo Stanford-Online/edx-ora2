@@ -257,6 +257,7 @@ class StaffInfoMixin(object):
         submission_uuid = None
         submission = None
         assessment_steps = self.assessment_steps
+        student_item = self.get_student_item_dict()
         scores = {}
         problem_closed = None
 
@@ -264,30 +265,30 @@ class StaffInfoMixin(object):
 
         if student_username:
             anonymous_user_id = self.get_anonymous_user_id(student_username, self.course_id)
-            student_item = self.get_student_item_dict(anonymous_user_id=anonymous_user_id)
+            student_item['student_id'] = anonymous_user_id
 
         if anonymous_user_id:
             # If there is a submission available for the requested student, present
             # it. If not, there will be no other information to collect.
             submissions = submission_api.get_submissions(student_item, 1)
 
-        if submissions:
-            submission_uuid = submissions[0]['uuid']
-            submission = submissions[0]
-
-            if 'file_key' in submission.get('answer', {}):
-                file_key = submission['answer']['file_key']
-
-                try:
-                    submission['image_url'] = file_api.get_download_url(file_key)
-                except file_exceptions.FileUploadError:
-                    # Log the error, but do not prevent the rest of the student info
-                    # from being displayed.
-                    msg = (
-                        u"Could not retrieve image URL for staff debug page.  "
-                        u"The student username is '{student_username}', and the file key is {file_key}"
-                    ).format(student_username=student_username, file_key=file_key)
-                    logger.exception(msg)
+            if submissions:
+                submission_uuid = submissions[0]['uuid']
+                submission = submissions[0]
+    
+                if 'file_key' in submission.get('answer', {}):
+                    file_key = submission['answer']['file_key']
+    
+                    try:
+                        submission['image_url'] = file_api.get_download_url(file_key)
+                    except file_exceptions.FileUploadError:
+                        # Log the error, but do not prevent the rest of the student info
+                        # from being displayed.
+                        msg = (
+                            u"Could not retrieve image URL for staff debug page.  "
+                            u"The student username is '{student_username}', and the file key is {file_key}"
+                        ).format(student_username=student_username, file_key=file_key)
+                        logger.exception(msg)
 
         example_based_assessment = None
         self_assessment = None

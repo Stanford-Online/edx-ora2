@@ -448,6 +448,7 @@ class TestCourseStaff(XBlockHandlerTestCase):
             'points_possible': 10,
         }
         request = self._setup_override_test(xblock, mock_score_data)
+        xblock.runtime._services['user'] = NullUserService()
 
         # Verify that html does not contain Score div
         resp = xblock.render_student_info(request)
@@ -463,6 +464,7 @@ class TestCourseStaff(XBlockHandlerTestCase):
             'points_override': 9,
         }
         request = self._setup_override_test(xblock, mock_score_data)
+        xblock.runtime._services['user'] = NullUserService()
 
         # Verify that html does contain Score div
         resp = xblock.render_student_info(request)
@@ -480,6 +482,7 @@ class TestCourseStaff(XBlockHandlerTestCase):
         }
         mock_is_closed.return_value = (True, None, None, None)
         request = self._setup_override_test(xblock, mock_score_data)
+        xblock.runtime._services['user'] = NullUserService()
 
         # Verify that html does contain Score div
         resp = xblock.render_student_info(request)
@@ -636,6 +639,7 @@ class TestCourseStaff(XBlockHandlerTestCase):
         xblock.xmodule_runtime = self._create_mock_runtime(
             xblock.scope_ids.usage_id, True, False, 'Bob'
         )
+        xblock.runtime._services['user'] = NullUserService()
 
         bob_item = STUDENT_ITEM.copy()
         bob_item['item_id'] = xblock.scope_ids.usage_id
@@ -646,7 +650,7 @@ class TestCourseStaff(XBlockHandlerTestCase):
 
         # Override score with valid data
         data = {
-            'student_id': 'Bob',
+            'student_username': 'Bob',
             'points_possible': '10',
             'points_override': '9',
         }
@@ -655,7 +659,7 @@ class TestCourseStaff(XBlockHandlerTestCase):
 
         # Try to override score with invalid "points possible"
         data = {
-            'student_id': 'Bob',
+            'student_username': 'Bob',
             'points_possible': '@',
             'points_override': '9',
         }
@@ -665,7 +669,7 @@ class TestCourseStaff(XBlockHandlerTestCase):
 
         # Try to override score with invalid "override score"
         data = {
-            'student_id': 'Bob',
+            'student_username': 'Bob',
             'points_possible': '10',
             'points_override': '&',
         }
@@ -675,7 +679,7 @@ class TestCourseStaff(XBlockHandlerTestCase):
 
         # Try to override score with override that is too large
         data = {
-            'student_id': 'Bob',
+            'student_username': 'Bob',
             'points_possible': '10',
             'points_override': '11',
         }
@@ -685,7 +689,7 @@ class TestCourseStaff(XBlockHandlerTestCase):
 
         # Try to override score with override that is less than zero
         data = {
-            'student_id': 'Bob',
+            'student_username': 'Bob',
             'points_possible': '10',
             'points_override': '-2',
         }
@@ -695,7 +699,7 @@ class TestCourseStaff(XBlockHandlerTestCase):
 
         # Override an already overriden score
         data = {
-            'student_id': 'Bob',
+            'student_username': 'Bob',
             'points_possible': '10',
             'points_override': '8',
         }
@@ -786,5 +790,5 @@ class TestCourseStaff(XBlockHandlerTestCase):
 
         # Now Bob should be fully populated in the student info view.
         request = namedtuple('Request', 'params')
-        request.params = {'student_id': 'Bob'}
+        request.params = {'student_username': 'Bob'}
         return request
