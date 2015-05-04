@@ -14,6 +14,8 @@ from openassessment.assessment.errors import SelfAssessmentError, PeerAssessment
 from submissions import api as sub_api
 from openassessment.assessment.models import TrackChanges
 
+from data_conversion import create_submission_dict
+
 
 class GradeMixin(object):
     """Grade Mixin introduces all handlers for displaying grades
@@ -51,7 +53,10 @@ class GradeMixin(object):
         # Render the grading section based on the status of the workflow
         # but give precedence to showing the override score if it is set.
         try:
-            if workflow.get('override_score'):
+            if status == "cancelled":
+                path = 'openassessmentblock/grade/oa_grade_cancelled.html'
+                context = {'score': workflow['score']}
+            elif workflow.get('override_score'):
                 path, context = self.render_grade_override(workflow['override_score'])
             elif status == "done":
                 path, context = self.render_grade_complete(workflow)
@@ -134,7 +139,7 @@ class GradeMixin(object):
         context = {
             'score': score,
             'feedback_text': feedback_text,
-            'student_submission': student_submission,
+            'student_submission': create_submission_dict(student_submission, self.prompts),
             'peer_assessments': peer_assessments,
             'self_assessment': self_assessment,
             'example_based_assessment': example_based_assessment,

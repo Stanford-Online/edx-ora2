@@ -55,6 +55,7 @@ class OpenAssessmentTest(WebAppTest):
     }
 
     SUBMISSION = u"This is a test submission."
+    LATEX_SUBMISSION = u"[mathjaxinline]( \int_{0}^{1}xdx \)[/mathjaxinline]"
     OPTIONS_SELECTED = [1, 2]
     EXPECTED_SCORE = 6
 
@@ -102,6 +103,23 @@ class SelfAssessmentTest(OpenAssessmentTest):
 
         # Verify the grade
         self.assertEqual(self.grade_page.wait_for_page().score, self.EXPECTED_SCORE)
+
+        # Check browser scrolled back to top
+        self.assertTrue(self.self_asmnt_page.is_on_top)
+
+    @retry()
+    @attr('acceptance')
+    def test_latex(self):
+        self.auto_auth_page.visit()
+        # 'Preview in Latex' button should be disabled at the page load
+        self.assertTrue(self.submission_page.latex_preview_button_is_disabled)
+
+        # Fill latex expression, & Verify if 'Preview in Latex is enabled'
+        self.submission_page.visit().fill_latex(self.LATEX_SUBMISSION)
+        self.assertFalse(self.submission_page.latex_preview_button_is_disabled)
+
+        # Click 'Preview in Latex' button & Verify if it was rendered
+        self.submission_page.preview_latex()
 
 
 class PeerAssessmentTest(OpenAssessmentTest):
@@ -168,6 +186,9 @@ class StudentTrainingTest(OpenAssessmentTest):
                 self.fail(msg)
 
             self.student_training_page.wait_for_page().wait_for_response().assess(options_selected)
+
+            # Check browser scrolled back to top only on first example
+            self.assertEqual(self.self_asmnt_page.is_on_top, example_num == 0)
 
         # Check that we've completed student training
         try:
