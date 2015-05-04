@@ -397,6 +397,7 @@ class TestPeerAssessmentRender(XBlockHandlerTestCase):
             'review_num': 1,
             'submit_button_text': 'submit your assessment & move to response #2',
             'allow_latex': False,
+            'track_changes': '',
         }
 
         self._assert_path_and_context(
