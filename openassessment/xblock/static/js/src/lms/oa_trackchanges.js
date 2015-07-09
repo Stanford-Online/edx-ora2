@@ -55,6 +55,50 @@
         });
     };
 
+    TrackChangesView.prototype.enableTrackChanges2 = function enableTrackChanges2() {
+        var tracker;
+        var $ = window.jQuery;
+        var ice = window.ice;
+        var confirm = window.confirm;
+        var element;
+        var elements = document.querySelectorAll('[id^=track-changes-content_]')
+        var trackers = []
+
+        if (!elements) {
+            return;
+        }
+        
+        for (index = 0; index < elements.length; index++) {
+            element = elements[index];
+            this.initialSubmission = $(element).html();
+            
+            tracker = new ice.InlineChangeEditor({
+                element: element,
+                handleEvents: true,
+                currentUser: { id: 1, name: 'Reviewer' },
+                plugins: [
+                    {
+                        // Track content that is cut and pasted
+                        name: 'IceCopyPastePlugin',
+                        settings: {
+                            // List of tags and attributes to preserve when cleaning a paste
+                            preserve: 'p,a[href],span[id,class]em,strong'
+                        }
+                    }
+                ]
+            });
+            tracker.startTracking();
+            trackers.push(tracker);
+
+            $('#track_changes_clear_button_' + index).click(function () {
+            	var id = this.id.split('_').pop();
+                if (confirm('Are you sure you want to clear your changes?')) {
+                    trackers[id].rejectAll();
+                }
+            });
+        }
+    };
+
     TrackChangesView.prototype.getEditedContent = function getEditedContent() {
         var $ = window.jQuery;
         var view = this;

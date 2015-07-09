@@ -92,6 +92,7 @@ OpenAssessment.PeerView.prototype = {
     installHandlers: function(isContinuedAssessment) {
         var sel = $('#openassessment__peer-assessment', this.element);
         var view = this;
+        this.trackChanges = [];
 
         // Install a click handler for collapse/expand
         this.baseView.setUpCollapseExpand(sel);
@@ -104,13 +105,24 @@ OpenAssessment.PeerView.prototype = {
         }
 
         // Initialize track changes
-        var trackChangesSelector = $("#track-changes-content", this.element);
-        if (trackChangesSelector.size() > 0) {
-            var trackChangesElement = trackChangesSelector.get(0);
-            this.trackChanges = new OpenAssessment.TrackChangesView(trackChangesElement);
-            view.baseView.enableTrackChangesView();
-        }
+//        var trackChangesSelector = $("#track-changes-content", this.element);
+//        if (trackChangesSelector.size() > 0) {
+//            var trackChangesElement = trackChangesSelector.get(0);
+//            this.trackChanges = new OpenAssessment.TrackChangesView(trackChangesElement);
+//            view.baseView.enableTrackChangesView();
+//        }
 
+        // Initialize track changes
+      var trackChangesSelector = $('[id^=track-changes-content_]', this.element);
+      if (trackChangesSelector.size() > 0) {
+          for (index = 0; index < trackChangesSelector.length; index++) {
+              var trackChangesElement = trackChangesSelector.get(index);
+              trackChangesView = new OpenAssessment.TrackChangesView(trackChangesElement);
+              this.trackChanges.push(trackChangesView);
+          }
+          view.baseView.enableTrackChangesView();
+      }   
+      
         // Install a change handler for rubric options to enable/disable the submit button
         if (this.rubric !== null) {
             this.rubric.canSubmitCallback($.proxy(view.peerSubmitEnabled, view));

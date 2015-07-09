@@ -65,7 +65,6 @@
                         <article class="peer-assessment" id="peer-assessment--001">
                             <div class="peer-assessment__display">
                                 <header class="peer-assessment__display__header">
-                                    {% if track_changes %}<input id="track_changes_clear_button" type="button" value="Clear Changes" />{% endif %}
                                     <h3 class="peer-assessment__display__title">
                                         {% with review_num_string=review_num|stringformat:"s" must_grade_string=must_grade|stringformat:"s" %}
                                             {% blocktrans with review_number='<span class="peer-assessment__number--current">'|safe|add:review_num_string|add:'</span>'|safe num_must_grade='<span class="peer-assessment__number--required">'|safe|add:must_grade_string|add:'</span>'|safe %}
@@ -75,7 +74,7 @@
                                     </h3>
                                 </header>
 
-                                <div class="peer-assessment__display__response" {% if track_changes %} id="track-changes-content" contenteditable="true" {% endif %}>
+                                <div class="peer-assessment__display__response" {% if track_changes %} id="xtrack-changes-content" contenteditable="true" {% endif %}>
                                     {% for part in peer_submission.answer.parts %}
                                         {{ part.text|linebreaks }}
                                     {% endfor %}
