@@ -20,40 +20,40 @@
         this.initialSubmission = '';
     }
 
-    TrackChangesView.prototype.enableTrackChanges = function enableTrackChanges() {
-        var tracker;
-        var $ = window.jQuery;
-        var ice = window.ice;
-        var confirm = window.confirm;
-        var element = document.getElementById('track-changes-content');
-
-        if (!element) {
-            return;
-        }
-        this.initialSubmission = $(element).html();
-        tracker = new ice.InlineChangeEditor({
-            element: element,
-            handleEvents: true,
-            currentUser: { id: 1, name: 'Reviewer' },
-            plugins: [
-                {
-                    // Track content that is cut and pasted
-                    name: 'IceCopyPastePlugin',
-                    settings: {
-                        // List of tags and attributes to preserve when cleaning a paste
-                        preserve: 'p,a[href],span[id,class]em,strong'
-                    }
-                }
-            ]
-        });
-        tracker.startTracking();
-
-        $('#track_changes_clear_button').click(function () {
-            if (confirm('Are you sure you want to clear your changes?')) {
-                tracker.rejectAll();
-            }
-        });
-    };
+//    TrackChangesView.prototype.enableTrackChanges = function enableTrackChanges() {
+//        var tracker;
+//        var $ = window.jQuery;
+//        var ice = window.ice;
+//        var confirm = window.confirm;
+//        var element = document.getElementById('track-changes-content');
+//
+//        if (!element) {
+//            return;
+//        }
+//        this.initialSubmission = $(element).html();
+//        tracker = new ice.InlineChangeEditor({
+//            element: element,
+//            handleEvents: true,
+//            currentUser: { id: 1, name: 'Reviewer' },
+//            plugins: [
+//                {
+//                    // Track content that is cut and pasted
+//                    name: 'IceCopyPastePlugin',
+//                    settings: {
+//                        // List of tags and attributes to preserve when cleaning a paste
+//                        preserve: 'p,a[href],span[id,class]em,strong'
+//                    }
+//                }
+//            ]
+//        });
+//        tracker.startTracking();
+//
+//        $('#track_changes_clear_button').click(function () {
+//            if (confirm('Are you sure you want to clear your changes?')) {
+//                tracker.rejectAll();
+//            }
+//        });
+//    };
 
     TrackChangesView.prototype.enableTrackChanges2 = function enableTrackChanges2() {
         var tracker;
@@ -91,24 +91,50 @@
             trackers.push(tracker);
 
             $('#track_changes_clear_button_' + index).click(function () {
-            	var id = this.id.split('_').pop();
+            	var suffix = this.id.split('_').pop();
                 if (confirm('Are you sure you want to clear your changes?')) {
-                    trackers[id].rejectAll();
+                    trackers[suffix].rejectAll();
                 }
             });
         }
     };
 
-    TrackChangesView.prototype.getEditedContent = function getEditedContent() {
+//    TrackChangesView.prototype.getEditedContent = function getEditedContent() {
+//        var $ = window.jQuery;
+//        var view = this;
+//        var changeTracking = $('#openassessment__peer-assessment');
+//        var editedContent = $('#track-changes-content', changeTracking).html();
+//        if (editedContent === view.initialSubmission) {
+//            editedContent = '';
+//        }
+//        return editedContent;
+//    };
+    
+    TrackChangesView.prototype.getEditedContent2 = function getEditedContent2() {
         var $ = window.jQuery;
         var view = this;
         var changeTracking = $('#openassessment__peer-assessment');
-        var editedContent = $('#track-changes-content', changeTracking).html();
-        if (editedContent === view.initialSubmission) {
-            editedContent = '';
+        
+        var editedContents = [];
+        
+        var ccccc = view.initialSubmission;
+        var ddddd = $('[id^=track-changes-content_]');
+        
+      //  var editedContents = $('[id^=track-changes-content_]', changeTracking).html();   // $('[id^=track-changes-content_]', this.element);   // '[id^=track-changes-content_]'
+        
+        if (ddddd.size() > 0) {
+            for (index = 0; index < ddddd.length; index++) {
+                var editedContentHtml = ddddd.get(index).html;
+        
+                if (editedContentHtml === view.initialSubmission) {                 /// Need to fix view.initialSubmission
+                    editedContentHtml = '';
+                }
+                editedContents.push(editedContentHtml);
+            }
         }
-        return editedContent;
+        return editedContents;
     };
+   
 
     TrackChangesView.prototype.displayTrackChanges = function displayTrackChanges() {
         var view = this;

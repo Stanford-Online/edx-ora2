@@ -49,6 +49,8 @@ class PeerAssessmentMixin(object):
             and "msg" (unicode) containing additional information if an error occurs.
 
         """
+        import pudb; pudb.set_trace()
+        
         # Validate the request
         if 'options_selected' not in data:
             return {'success': False, 'msg': self._('Must provide options selected in the assessment')}

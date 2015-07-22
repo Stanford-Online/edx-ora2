@@ -73,12 +73,6 @@
                                         {% endwith %}
                                     </h3>
                                 </header>
-
-                                <div class="peer-assessment__display__response" {% if track_changes %} id="xtrack-changes-content" contenteditable="true" {% endif %}>
-                                    {% for part in peer_submission.answer.parts %}
-                                        {{ part.text|linebreaks }}
-                                    {% endfor %}
-                                </div>
                                 {% include "openassessmentblock/oa_submission_answer.html" with answer=peer_submission.answer answer_text_label="Your peer's response to the question above:" %}
 
                                 {% if allow_file_upload and peer_file_url %}
