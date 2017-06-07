@@ -1,5 +1,5 @@
 """
-Data Conversion utility methods for handling ORA2 XBlock data transformations.
+Data Conversion utility methods for handling ORA2 XBlock data transformations and validation.
 
 """
 import json
@@ -220,6 +220,7 @@ def make_django_template_key(key):
     return key.replace('-', '_')
 
 
+<<<<<<< HEAD
 def add_trackchanges_to_submission_dict(submission, peer_assessments):
     """
     Adds any trackchange edits to the submission dict.
@@ -247,3 +248,30 @@ def add_trackchanges_to_submission_dict(submission, peer_assessments):
                 submission['answer']['parts'][index]['track_changes'] = prompt_array[index]
 
     return submission
+=======
+def verify_assessment_parameters(func):
+    """
+    Verify that the wrapped function receives the given parameters.
+
+    Used for the staff_assess, self_assess, peer_assess functions and uses their data types.
+
+    Args:
+        func - the function to be modified
+
+    Returns:
+        the modified function
+    """
+    def verify_and_call(instance, data, suffix):
+        # Validate the request
+        if 'options_selected' not in data:
+            return {'success': False, 'msg': instance._('You must provide options selected in the assessment.')}
+
+        if 'overall_feedback' not in data:
+            return {'success': False, 'msg': instance._('You must provide overall feedback in the assessment.')}
+
+        if 'criterion_feedback' not in data:
+            return {'success': False, 'msg': instance._('You must provide feedback for criteria in the assessment.')}
+
+        return func(instance, data, suffix)
+    return verify_and_call
+>>>>>>> upstream-1.1.12

@@ -45,16 +45,30 @@
             {
                 "name": "self-assessment",
                 "start": "2014-04-01T00:00:00",
+<<<<<<< HEAD
                 "due": "2014-06-01T00:00:00",
                 "track_changes": ""
+=======
+                "due": "2014-06-01T00:00:00"
+            },
+            {
+                "name": "staff-assessment",
+                "required": false
+>>>>>>> upstream-1.1.12
             }
         ],
         "expected_xml": [
             "<openassessment>",
             "<title>Foo</title>",
             "<assessments>",
+<<<<<<< HEAD
                 "<assessment name=\"peer-assessment\" start=\"2014-02-27T09:46:28\" due=\"2014-03-01T00:00:00\" must_grade=\"5\" must_be_graded_by=\"3\" track_changes=\"\" />",
                 "<assessment name=\"self-assessment\" start=\"2014-04-01T00:00:00\" due=\"2014-06-01T00:00:00\" track_changes=\"\" />",
+=======
+                "<assessment name=\"peer-assessment\" start=\"2014-02-27T09:46:28\" due=\"2014-03-01T00:00:00\" must_grade=\"5\" must_be_graded_by=\"3\" />",
+                "<assessment name=\"self-assessment\" start=\"2014-04-01T00:00:00\" due=\"2014-06-01T00:00:00\" />",
+                "<assessment name=\"staff-assessment\" required=\"False\" />",
+>>>>>>> upstream-1.1.12
             "</assessments>",
             "<prompts>",
                 "<prompt><description>Test prompt</description></prompt>",
@@ -330,15 +344,28 @@
                 "start": "2014-02-27T09:46:28",
                 "due": "2014-03-01T00:00:00",
                 "must_grade": 5,
+<<<<<<< HEAD
                 "must_be_graded_by": 3,
                 "track_changes": ""
+=======
+                "must_be_graded_by": 3
+            },
+            {
+                "name": "staff-assessment",
+                "required": false
+>>>>>>> upstream-1.1.12
             }
         ],
         "expected_xml": [
             "<openassessment>",
             "<title>ƒσσ</title>",
             "<assessments>",
+<<<<<<< HEAD
                 "<assessment name=\"peer-assessment\" start=\"2014-02-27T09:46:28\" due=\"2014-03-01T00:00:00\" must_grade=\"5\" must_be_graded_by=\"3\" track_changes=\"\" />",
+=======
+                "<assessment name=\"peer-assessment\"  start=\"2014-02-27T09:46:28\" due=\"2014-03-01T00:00:00\" must_grade=\"5\" must_be_graded_by=\"3\" />",
+                "<assessment name=\"staff-assessment\" required=\"False\" />",
+>>>>>>> upstream-1.1.12
             "</assessments>",
             "<prompts>",
                 "<prompt><description>Ṫëṡẗ ṗṛöṁṗẗ</description></prompt>",
@@ -1261,7 +1288,7 @@
         ]
     },
 
-    "ai_peer_self": {
+    "ai_peer_self_staff": {
         "title": "Foo",
         "prompt": "Test prompt",
         "rubric_feedback_prompt": "Test Feedback Prompt",
@@ -1329,8 +1356,16 @@
             {
                 "name": "self-assessment",
                 "start": "2014-04-01T00:00:00",
+<<<<<<< HEAD
                 "due": "2014-06-01T00:00:00",
                 "track_changes": ""
+=======
+                "due": "2014-06-01T00:00:00"
+            },
+            {
+                "name": "staff-assessment",
+                "required": true
+>>>>>>> upstream-1.1.12
             }
         ],
         "expected_xml": [
@@ -1351,8 +1386,14 @@
                         "<select criterion=\"Test criterion\" option=\"Yes\" />",
                     "</example>",
                 "</assessment>",
+<<<<<<< HEAD
                 "<assessment name=\"peer-assessment\" start=\"2014-02-27T09:46:28\" due=\"2014-03-01T00:00:00\" must_grade=\"5\" must_be_graded_by=\"3\" track_changes=\"\" />",
                 "<assessment name=\"self-assessment\" start=\"2014-04-01T00:00:00\" due=\"2014-06-01T00:00:00\" track_changes=\"\" />",
+=======
+                "<assessment name=\"peer-assessment\" start=\"2014-02-27T09:46:28\" due=\"2014-03-01T00:00:00\" must_grade=\"5\" must_be_graded_by=\"3\" />",
+                "<assessment name=\"self-assessment\" start=\"2014-04-01T00:00:00\" due=\"2014-06-01T00:00:00\" />",
+                "<assessment name=\"staff-assessment\" required=\"True\" />",
+>>>>>>> upstream-1.1.12
             "</assessments>",
             "<prompts>",
                 "<prompt><description>Test prompt</description></prompt>",

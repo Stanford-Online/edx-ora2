@@ -8,4 +8,8 @@ from .peer import *
 from .training import *
 from .student_training import *
 from .ai import *
+<<<<<<< HEAD
 from .trackchanges import TrackChanges
+=======
+from .staff import *
+>>>>>>> upstream-1.1.12

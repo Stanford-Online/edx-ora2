@@ -294,6 +294,7 @@ def _parse_prompts_xml(root):
 
     return prompts_list
 
+
 def _parse_options_xml(options_root):
     """
     Parse <options> element in the OpenAssessment XBlock's content XML.
@@ -408,7 +409,9 @@ def _parse_criteria_xml(criteria_root):
         if criterion_feedback in ['optional', 'disabled', 'required']:
             criterion_dict['feedback'] = criterion_feedback
         else:
-            raise UpdateFromXmlError('Invalid value for "feedback" attribute: if specified, it must be set set to "optional" or "required".')
+            raise UpdateFromXmlError(
+                'Invalid value for "feedback" attribute: if specified, it must be set set to "optional" or "required".'
+            )
 
         # Criterion options
         criterion_dict['options'] = _parse_options_xml(criterion)
@@ -575,6 +578,7 @@ def parse_assessments_xml(assessments_root):
             except ValueError:
                 raise UpdateFromXmlError('The "must_be_graded_by" value must be a positive integer.')
 
+<<<<<<< HEAD
         # Assessment track_changes
         if 'track_changes' in assessment.attrib:
             track_changes_url = assessment.get('track_changes', '')
@@ -586,6 +590,15 @@ def parse_assessments_xml(assessments_root):
                     validator(track_changes_url)
                 except DjangoValidationError:
                     raise UpdateFromXmlError('The "track_changes" value must be an URL string')
+=======
+        # Assessment required
+        if 'required' in assessment.attrib:
+
+            # Staff assessment is the only type to use an explicit required marker
+            if assessment_dict['name'] != 'staff-assessment':
+                raise UpdateFromXmlError('The "required" field is only allowed for staff assessment.')
+            assessment_dict['required'] = _parse_boolean(unicode(assessment.get('required')))
+>>>>>>> upstream-1.1.12
 
         # Training examples
         examples = assessment.findall('example')
@@ -671,7 +684,12 @@ def serialize_assessments(assessments_root, oa_block):
         if assessment_dict.get('algorithm_id') is not None:
             assessment.set('algorithm_id', unicode(assessment_dict['algorithm_id']))
 
+<<<<<<< HEAD
         assessment.set('track_changes', unicode(assessment_dict.get('track_changes', '')))
+=======
+        if assessment_dict.get('required') is not None:
+            assessment.set('required', unicode(assessment_dict['required']))
+>>>>>>> upstream-1.1.12
 
         # Training examples
         examples = assessment_dict.get('examples', [])
@@ -902,6 +920,7 @@ def parse_from_xml(root):
         'allow_latex': allow_latex,
         'leaderboard_show': leaderboard_show
     }
+
 
 def parse_from_xml_str(xml):
     """
