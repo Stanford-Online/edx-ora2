@@ -46,14 +46,9 @@
                                 class="answer__value"
                                 id="{{ rubric_type }}__assessment__rubric__question--{{ criterion.order_num }}__feedback__{{ xblock_id }}"
                                 value="{{ criterion.name }}"
-<<<<<<< HEAD
-                                name="{{ criterion.name }}"
-                                maxlength="25000"
-=======
                                 data-criterion-name="{{ criterion.name }}"
                                 aria-describedby="{{ rubric_type }}__assessment__rubric__prompt--{{ criterion.order_num }}"
-                                maxlength="1000"
->>>>>>> upstream-1.1.12
+                                maxlength="25000"
                                 {% if criterion.feedback == 'required' %}required{% endif %}
                                 >
                             </textarea>
@@ -74,11 +69,7 @@
                     class="assessment__rubric__question--feedback__value"
                     id="{{ rubric_type }}__assessment__rubric__question--feedback__value__{{ xblock_id }}"
                     placeholder="{{ rubric_feedback_default_text }}"
-<<<<<<< HEAD
                     maxlength="25000"
-=======
-                    maxlength="1000"
->>>>>>> upstream-1.1.12
                 >
                 </textarea>
             </div>
