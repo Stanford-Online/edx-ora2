@@ -210,24 +210,6 @@ class AssessmentWorkflow(TimeStampedModel, StatusModel):
             score = sub_api.get_latest_score_for_submission(self.submission_uuid)
         return score
 
-<<<<<<< HEAD
-    @property
-    def override_score(self):
-        """
-        Latest override score.
-        
-        Note an override score has no submission associated with it.
-        """
-
-        try:
-            submission_dict = sub_api.get_submission_and_student(self.submission_uuid)
-        except sub_api.SubmissionError:
-            return None
-        student_item = submission_dict['student_item']
-        return sub_api.get_score_override(student_item)
-
-    def status_details(self, assessment_requirements):
-=======
     def status_details(self):
         """
         Returns workflow status in the form of a dictionary. Each step in the
@@ -235,7 +217,6 @@ class AssessmentWorkflow(TimeStampedModel, StatusModel):
         the step is complete (submitter requirements fulfilled) and graded (the
         submission has been assessed).
         """
->>>>>>> upstream-1.1.12
         status_dict = {}
         steps = self._get_steps()
         for step in steps:
