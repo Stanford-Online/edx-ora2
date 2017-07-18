@@ -156,7 +156,6 @@ OpenAssessment.BaseView.prototype = {
     },
 
     /**
-<<<<<<< HEAD
     Enable TrackChanges
     **/
     enableTrackChangesView: function() {
@@ -171,15 +170,6 @@ OpenAssessment.BaseView.prototype = {
     },
 
     /**
-    Report an error to the user.
-
-    Args:
-        type (str): Which type of error.  Options are "save", submit", "peer", and "self".
-        msg (str or null): The error message to display.
-            If null, hide the error message (with one exception: loading errors are never hidden once displayed)
-    **/
-    toggleActionError: function(type, msg) {
-=======
      * Report an error to the user.
      *
      * @param {string} type The type of error. Options are "save", submit", "peer", and "self".
@@ -187,7 +177,6 @@ OpenAssessment.BaseView.prototype = {
      *     Note: loading errors are never hidden once displayed.
      */
     toggleActionError: function(type, message) {
->>>>>>> upstream-1.1.12
         var element = this.element;
         var container = null;
         if (type === 'save') {
