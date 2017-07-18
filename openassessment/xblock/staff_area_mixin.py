@@ -369,14 +369,9 @@ class StaffAreaMixin(object):
         """
         anonymous_user_id = None
         student_item = None
-<<<<<<< HEAD
-        scores = {}
-        problem_closed = None
-=======
         submissions = None
         submission = None
         submission_uuid = None
->>>>>>> upstream-1.1.12
 
         if student_username:
             anonymous_user_id = self.get_anonymous_user_id(student_username, self.course_id)
@@ -480,20 +475,11 @@ class StaffAreaMixin(object):
             'peer_assessments': peer_assessments,
             'staff_assessment': [staff_assessment] if staff_assessment else None,
             'submitted_assessments': submitted_assessments,
-<<<<<<< HEAD
-            'self_assessment': self_assessment,
-            'example_based_assessment': example_based_assessment,
-            'rubric_criteria': copy.deepcopy(self.rubric_criteria_with_labels),
-            'scores': scores,
-            'problem_closed': problem_closed,
-        }
-=======
             'grade_details': grade_details,
             'score': workflow.get('score'),
             'workflow_status': workflow.get('status'),
             'workflow_cancellation': workflow_cancellation,
         })
->>>>>>> upstream-1.1.12
 
         if peer_assessments or self_assessment or example_based_assessment or staff_assessment:
             max_scores = peer_api.get_rubric_max_scores(submission_uuid)
