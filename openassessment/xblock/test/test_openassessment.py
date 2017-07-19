@@ -84,15 +84,11 @@ class TestOpenAssessment(XBlockHandlerTestCase):
         with patch('openassessment.xblock.workflow_mixin.workflow_api') as mock_api:
             self.runtime.render(xblock, "student_view")
             expected_reqs = {
-<<<<<<< HEAD
                 "peer": {
                     "must_grade": 5,
                     "must_be_graded_by": 3,
                     "track_changes": "",
                 }
-=======
-                "peer": {"must_grade": 5, "must_be_graded_by": 3}
->>>>>>> upstream-1.1.12
             }
             mock_api.update_from_assessments.assert_called_once_with('test_submission', expected_reqs)
 
