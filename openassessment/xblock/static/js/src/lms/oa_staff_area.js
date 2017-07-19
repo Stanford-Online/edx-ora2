@@ -166,10 +166,6 @@
                     showFormError('');
 
                     // Load the HTML and install event handlers
-<<<<<<< HEAD
-                    $('#openassessment__student-info', view.element).replaceWith(html);
-                    view.bindScoreOverrideHandler();
-=======
                     $staffGradeTab.find('.staff__grade__form').replaceWith(html);
 
                     // Update the number of ungraded and checked out assigments.
@@ -182,7 +178,6 @@
 
                         // Install a change handler for rubric options to enable/disable the submit button
                         rubric.canSubmitCallback($.proxy(view.staffSubmitEnabled, view, $staffGradeTab));
->>>>>>> upstream-1.1.12
 
                         rubric.changesExistCallback(
                             $.proxy(view.assessmentRubricChanges, view, view.FULL_GRADE_UNSAVED_WARNING_KEY)
@@ -272,52 +267,8 @@
         },
 
         /**
-<<<<<<< HEAD
-         Upon request, submits an override grade.
-         **/
-        overridePeerScore: function() {
-            var sel = $('#openassessment__staff-tools', this.element);
-            var studentUsername = sel.find('#openassessment__student_username').val();
-            var pointsOverride = sel.find('#openassessment_override_score').val();
-            var pointsPossible = sel.find('#openassessment_points_possible').text();
-            this.server.overridePeerScore(studentUsername, pointsOverride, pointsPossible).done(
-                function(pointsOverride) {
-                    $('#openassessment_points_override', this.element).text(pointsOverride);
-                }
-            ).fail(function(errMsg) {
-                $('#openassessment_points_override', this.element).text(errMsg);
-            });
-        },
-
-        /**
-         Handler for Peer score override.
-         This must be run after loadStudentInfo has completed so that
-         the required HTML elements are present.
-         **/
-        bindScoreOverrideHandler: function() {
-            var sel = $('#openassessment__student-info', this.element);
-            var view = this;
-
-            if (!sel.length) {
-                return;
-            }
-
-            // Click handler for overriding a student's peer score.
-            sel.find('#submit_override_score').click(
-                    function(eventObject) {
-                        eventObject.preventDefault();
-                        view.overridePeerScore();
-                    }
-            );
-        },
-
-        /**
-         Install event handlers for the view.
-         **/
-=======
          * Install event handlers for the view.
          */
->>>>>>> upstream-1.1.12
         installHandlers: function() {
             var view = this;
             var $staffArea = $('.openassessment__staff-area', this.element);
