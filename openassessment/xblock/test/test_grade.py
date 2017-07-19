@@ -63,12 +63,12 @@ class TestGrade(XBlockHandlerTestCase, SubmitAssessmentsMixin):
     @scenario('data/grade_scenario_track_changes.xml', user_id='Greggs')
     def test_render_grade_with_track_changes(self, xblock):
         # Submit, assess, and render the grade view
-        self._create_submission_and_assessments(
+        self.create_submission_and_assessments(
             xblock,
             self.SUBMISSION,
             self.PEERS,
-            self.ASSESSMENTS,
-            self.ASSESSMENTS[0],
+            PEER_ASSESSMENTS,
+            SELF_ASSESSMENT,
             should_track_changes=True,
         )
         resp = self.request(xblock, 'render_grade', json.dumps(dict()))
@@ -460,23 +460,6 @@ class TestGrade(XBlockHandlerTestCase, SubmitAssessmentsMixin):
         resp = self.request(xblock, 'render_grade', json.dumps(dict()))
         self.assertIn(u'not completed', resp.decode('utf-8').lower())
 
-<<<<<<< HEAD
-    @scenario('data/grade_incomplete_scenario.xml', user_id='Bunk')
-    def test_grade_score_override(self, xblock):
-        # Graded peers, but haven't completed self assessment
-        self._create_submission_and_assessments(
-            xblock, self.SUBMISSION, [self.PEERS[0]], [self.ASSESSMENTS[0]], None
-        )
-
-        # Create an override score for the submission
-        submission_dict = sub_api.get_submission_and_student(xblock.submission_uuid)
-        student_item = submission_dict['student_item']
-        sub_api.score_override(student_item, '14', '15')
-
-        # Verify that we're on the grade override template
-        resp = self.request(xblock, 'render_grade', json.dumps(dict()))
-        self.assertIn(u'<span class="grade__value__earned">14</span> out of <span class="grade__value__potential">15</span>, set by the instructor.', resp.decode('utf-8').lower())
-=======
         # Verify that response_submitted page is rendered properly. This isn't super tightly connnected
         # to grade rendering, but it seems a shame to do the same setup in 2 different places.
         submitted_resp = self.request(xblock, 'render_submission', json.dumps(dict()))
@@ -484,7 +467,6 @@ class TestGrade(XBlockHandlerTestCase, SubmitAssessmentsMixin):
         self.assertIn(u'steps are complete and your response is fully assessed', decoded_response)
         self.assertIn(u'you still need to complete', decoded_response)
         return decoded_response
->>>>>>> upstream-1.1.12
 
     @scenario('data/grade_scenario.xml', user_id='Greggs')
     def test_submit_feedback(self, xblock):
@@ -574,101 +556,9 @@ class TestGrade(XBlockHandlerTestCase, SubmitAssessmentsMixin):
                 self.assertEqual(option['label'], option['name'])
                 option_labels[(criterion['name'], option['name'])] = option['label']
 
-<<<<<<< HEAD
-        # Verify that assessment part options are also assigned labels
-        for asmnt in context['peer_assessments'] + [context['self_assessment']]:
-            for part in asmnt['parts']:
-                expected_criterion_label = criterion_labels[part['criterion']['name']]
-                self.assertEqual(part['criterion']['label'], expected_criterion_label)
-                expected_option_label = option_labels[(part['criterion']['name'], part['option']['name'])]
-                self.assertEqual(part['option']['label'], expected_option_label)
-
-    def _create_submission_and_assessments(
-        self, xblock, submission_text, peers, peer_assessments, self_assessment,
-        waiting_for_peer=False,
-        should_track_changes=False,
-    ):
-        """
-        Create a submission and peer/self assessments, so that the user can receive a grade.
-
-        Args:
-            xblock (OpenAssessmentBlock): The XBlock, loaded for the user who needs a grade.
-            submission_text (unicode): Text of the submission from the user.
-            peers (list of unicode): List of user IDs of peers who will assess the user.
-            peer_assessments (list of dict): List of assessment dictionaries for peer assessments.
-            self_assessment (dict): Dict of assessment for self-assessment.
-
-        Keyword Arguments:
-            waiting_for_peer (bool): If true, skip creation of peer assessments for the user's submission.
-
-        Returns:
-            None
-
-        """
-        # Create a submission from the user
-        student_item = xblock.get_student_item_dict()
-        student_id = student_item['student_id']
-        submission = xblock.create_submission(student_item, submission_text)
-
-        # Create submissions and assessments from other users
-        scorer_submissions = []
-        for scorer_name, assessment in zip(peers, peer_assessments):
-
-            # Create a submission for each scorer for the same problem
-            scorer = copy.deepcopy(student_item)
-            scorer['student_id'] = scorer_name
-
-            scorer_sub = sub_api.create_submission(scorer, {'text': submission_text})
-            workflow_api.create_workflow(scorer_sub['uuid'], self.STEPS)
-
-            submission = peer_api.get_submission_to_assess(scorer_sub['uuid'], len(peers))
-
-            # Store the scorer's submission so our user can assess it later
-            scorer_submissions.append(scorer_sub)
-
-            track_changes_edits = ''
-            if should_track_changes:
-                track_changes_edits = []
-                for sub_text in submission_text:
-                    track_changes_edits.append(sub_text + u'<span class="ins"> is wrong!</span>')
-
-            # Create an assessment of the user's submission
-            if not waiting_for_peer:
-                peer_api.create_assessment(
-                    scorer_sub['uuid'], scorer_name,
-                    assessment['options_selected'],
-                    assessment['criterion_feedback'],
-                    assessment['overall_feedback'],
-                    {'criteria': xblock.rubric_criteria},
-                    xblock.get_assessment_module('peer-assessment')['must_be_graded_by'],
-                    track_changes_edits=track_changes_edits,
-                )
-
-        # Have our user make assessments (so she can get a score)
-        for asmnt in peer_assessments:
-            peer_api.get_submission_to_assess(submission['uuid'], len(peers))
-            peer_api.create_assessment(
-                submission['uuid'],
-                student_id,
-                asmnt['options_selected'],
-                asmnt['criterion_feedback'],
-                asmnt['overall_feedback'],
-                {'criteria': xblock.rubric_criteria},
-                xblock.get_assessment_module('peer-assessment')['must_be_graded_by']
-            )
-
-        # Have the user submit a self-assessment (so she can get a score)
-        if self_assessment is not None:
-            self_api.create_assessment(
-                submission['uuid'], student_id, self_assessment['options_selected'],
-                self_assessment['criterion_feedback'], self_assessment['overall_feedback'],
-                {'criteria': xblock.rubric_criteria}
-            )
-=======
             # Verify that assessment part options are also assigned labels
             for assessment in criterion['assessments']:
                 expected_criterion_label = criterion_labels[assessment['criterion']['name']]
                 self.assertEqual(assessment['criterion']['label'], expected_criterion_label)
                 expected_option_label = option_labels[(assessment['criterion']['name'], assessment['option']['name'])]
                 self.assertEqual(assessment['option']['label'], expected_option_label)
->>>>>>> upstream-1.1.12
