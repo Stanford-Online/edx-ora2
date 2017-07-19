@@ -116,47 +116,6 @@ if (typeof OpenAssessment.Server === "undefined" || !OpenAssessment.Server) {
         },
 
         /**
-<<<<<<< HEAD
-         Submit a grade to override the peer assessment grade for this student.
-
-        Args:
-            student_username (string): The username of the student.
-            points_override (string): The points input by the instructor to override the peer grade.
-            points_possible (string): The max points possible for the submission.
-
-        Returns:
-            A JQuery promise, which resolves with the HTML of the rendered XBlock
-            and fails with an error message.
-         **/
-        overridePeerScore: function(studentUsername, pointsOverride, pointsPossible) {
-            var url = this.url('peer_score_override');
-            return $.Deferred(function(defer) {
-                $.ajax({
-                    url: url,
-                    type: 'POST',
-                    data: JSON.stringify({
-                        student_username: studentUsername,
-                        points_override: pointsOverride,
-                        points_possible: pointsPossible
-                    }),
-                    contentType: jsonContentType
-                }).done(
-                    function(data) {
-                        if (data.success) {
-                            defer.resolveWith(this, [data.points_override]);
-                        } else {
-                            defer.rejectWith(this, [data.msg]);
-                        }
-                    }
-                ).fail(function() {
-                    defer.rejectWith(this, [gettext('There was a problem saving the override score.')]);
-                });
-            });
-        },
-
-        /**
-         Send a submission to the XBlock.
-=======
          * Renders the next submission for staff grading.
          *
          * @returns {promise} A JQuery promise, which resolves with the HTML of the rendered section
@@ -176,7 +135,6 @@ if (typeof OpenAssessment.Server === "undefined" || !OpenAssessment.Server) {
                 });
             }).promise();
         },
->>>>>>> upstream-1.1.12
 
         /**
          * Renders the count of ungraded and checked out assessemtns.
@@ -286,43 +244,6 @@ if (typeof OpenAssessment.Server === "undefined" || !OpenAssessment.Server) {
         },
 
         /**
-<<<<<<< HEAD
-         Send a peer assessment to the XBlock.
-         Args:
-         optionsSelected (object literal): Keys are criteria names,
-         values are the option text the user selected for the criterion.
-         criterionFeedback (object literal): Written feedback on a particular criterion,
-         where keys are criteria names and values are the feedback strings.
-         overallFeedback (string): Written feedback on the submission as a whole.
-
-         Returns:
-         A JQuery promise, which resolves with no args if successful
-         and fails with an error message otherise.
-
-         Example:
-         var options = { clarity: "Very clear", precision: "Somewhat precise" };
-         var criterionFeedback = { clarity: "The essay was very clear." };
-         var overallFeedback = "Good job!";
-         server.peerAssess(options, criterionFeedback, overallFeedback).done(
-         function() { console.log("Success!"); }
-         ).fail(
-         function(errorMsg) { console.log(errorMsg); }
-         );
-         **/
-        peerAssess: function(optionsSelected,
-                            criterionFeedback,
-                            overallFeedback,
-                            uuid,
-                            trackChangesEdits) {
-            var url = this.url('peer_assess');
-            var payload = JSON.stringify({
-                options_selected: optionsSelected,
-                criterion_feedback: criterionFeedback,
-                overall_feedback: overallFeedback,
-                submission_uuid: uuid,
-                track_changes_edits: trackChangesEdits
-            });
-=======
          * Submits an assessment.
          *
          * @param {string} assessmentType - The type of assessment.
@@ -332,7 +253,6 @@ if (typeof OpenAssessment.Server === "undefined" || !OpenAssessment.Server) {
          */
         submitAssessment: function(assessmentType, payload) {
             var url = this.url(assessmentType);
->>>>>>> upstream-1.1.12
             return $.Deferred(function(defer) {
                 $.ajax({
                     type: "POST", url: url, data: JSON.stringify(payload), contentType: jsonContentType
@@ -361,12 +281,13 @@ if (typeof OpenAssessment.Server === "undefined" || !OpenAssessment.Server) {
          * @returns {promise} A promise which resolves with no arguments if successful,
          *     and which fails with an error message otherwise.
          */
-        peerAssess: function(optionsSelected, criterionFeedback, overallFeedback, submissionID) {
+        peerAssess: function(optionsSelected, criterionFeedback, overallFeedback, submissionID, trackChangesEdits) {
             return this.submitAssessment("peer_assess", {
                 options_selected: optionsSelected,
                 criterion_feedback: criterionFeedback,
                 overall_feedback: overallFeedback,
-                submission_uuid: submissionID
+                submission_uuid: submissionID,
+                track_changes_edits: trackChangesEdits
             });
         },
 
