@@ -309,11 +309,8 @@ class TestPeerAssessmentRender(XBlockHandlerTestCase):
             'must_grade': 5,
             'review_num': 1,
             'allow_latex': False,
-<<<<<<< HEAD
             'track_changes': '',
-=======
             'time_zone': pytz.utc,
->>>>>>> upstream-1.1.12
         }
         self._assert_path_and_context(
             xblock, 'openassessmentblock/peer/oa_peer_unavailable.html', expected_context
@@ -329,11 +326,8 @@ class TestPeerAssessmentRender(XBlockHandlerTestCase):
             'must_grade': 5,
             'review_num': 1,
             'allow_latex': False,
-<<<<<<< HEAD
             'track_changes': '',
-=======
             'time_zone': pytz.utc,
->>>>>>> upstream-1.1.12
         }
         self._assert_path_and_context(
             xblock, 'openassessmentblock/peer/oa_peer_closed.html', expected_context
@@ -349,11 +343,8 @@ class TestPeerAssessmentRender(XBlockHandlerTestCase):
             'must_grade': 5,
             'review_num': 1,
             'allow_latex': False,
-<<<<<<< HEAD
             'track_changes': '',
-=======
             'time_zone': pytz.utc,
->>>>>>> upstream-1.1.12
         }
         self._assert_path_and_context(
             xblock, 'openassessmentblock/peer/oa_peer_unavailable.html', expected_context
@@ -372,11 +363,8 @@ class TestPeerAssessmentRender(XBlockHandlerTestCase):
             'review_num': 1,
             'submit_button_text': 'submit your assessment & move to response #2',
             'allow_latex': False,
-<<<<<<< HEAD
             'track_changes': '',
-=======
             'time_zone': pytz.utc,
->>>>>>> upstream-1.1.12
         }
         self._assert_path_and_context(
             xblock, 'openassessmentblock/peer/oa_peer_waiting.html',
@@ -416,11 +404,8 @@ class TestPeerAssessmentRender(XBlockHandlerTestCase):
             'peer_file_url': '',
             'submit_button_text': 'submit your assessment & move to response #2',
             'allow_latex': False,
-<<<<<<< HEAD
             'track_changes': '',
-=======
             'time_zone': pytz.utc,
->>>>>>> upstream-1.1.12
         }
         self._assert_path_and_context(
             xblock, 'openassessmentblock/peer/oa_peer_assessment.html',
@@ -440,11 +425,8 @@ class TestPeerAssessmentRender(XBlockHandlerTestCase):
             'review_num': 1,
             'submit_button_text': 'submit your assessment & move to response #2',
             'allow_latex': False,
-<<<<<<< HEAD
             'track_changes': '',
-=======
             'time_zone': pytz.utc,
->>>>>>> upstream-1.1.12
         }
 
         self._assert_path_and_context(
@@ -468,11 +450,8 @@ class TestPeerAssessmentRender(XBlockHandlerTestCase):
             'review_num': 1,
             'submit_button_text': 'submit your assessment & move to response #2',
             'allow_latex': False,
-<<<<<<< HEAD
             'track_changes': '',
-=======
             'time_zone': pytz.utc,
->>>>>>> upstream-1.1.12
         }
         self._assert_path_and_context(
             xblock, 'openassessmentblock/peer/oa_peer_closed.html',
@@ -508,11 +487,8 @@ class TestPeerAssessmentRender(XBlockHandlerTestCase):
             'review_num': 1,
             'submit_button_text': 'submit your assessment & move to response #2',
             'allow_latex': False,
-<<<<<<< HEAD
             'track_changes': '',
-=======
             'time_zone': pytz.utc,
->>>>>>> upstream-1.1.12
         }
         self._assert_path_and_context(
             xblock, 'openassessmentblock/peer/oa_peer_closed.html',
@@ -540,11 +516,8 @@ class TestPeerAssessmentRender(XBlockHandlerTestCase):
             'must_grade': 5,
             'review_num': 1,
             'allow_latex': False,
-<<<<<<< HEAD
             'track_changes': '',
-=======
             'time_zone': pytz.utc,
->>>>>>> upstream-1.1.12
         }
 
         self._assert_path_and_context(
@@ -570,17 +543,6 @@ class TestPeerAssessmentRender(XBlockHandlerTestCase):
         # Continued grading should still be available,
         # but since there are no other submissions, we're in the waiting state.
         expected_context = {
-<<<<<<< HEAD
-            'estimated_time': '20 minutes',
-             'graded': 0,
-             'must_grade': 5,
-             'peer_due': dt.datetime(2000, 1, 1).replace(tzinfo=pytz.utc),
-             'review_num': 1,
-             'rubric_criteria': xblock.rubric_criteria,
-             'submit_button_text': 'Submit your assessment & review another response',
-             'allow_latex': False,
-             'track_changes': '',
-=======
             'graded': 0,
             'must_grade': 5,
             'peer_due': dt.datetime(2000, 1, 1).replace(tzinfo=pytz.utc),
@@ -588,8 +550,8 @@ class TestPeerAssessmentRender(XBlockHandlerTestCase):
             'rubric_criteria': xblock.rubric_criteria,
             'submit_button_text': 'Submit your assessment & review another response',
             'allow_latex': False,
+            'track_changes': '',
             'time_zone': pytz.utc,
->>>>>>> upstream-1.1.12
         }
         self._assert_path_and_context(
             xblock, 'openassessmentblock/peer/oa_peer_turbo_mode_waiting.html',
@@ -610,20 +572,6 @@ class TestPeerAssessmentRender(XBlockHandlerTestCase):
         )
 
         expected_context = {
-<<<<<<< HEAD
-            'estimated_time': '20 minutes',
-             'graded': 0,
-             'must_grade': 5,
-             'peer_due': dt.datetime(2000, 1, 1).replace(tzinfo=pytz.utc),
-             'peer_submission': create_submission_dict(submission, xblock.prompts),
-             'file_upload_type': None,
-             'peer_file_url': '',
-             'review_num': 1,
-             'rubric_criteria': xblock.rubric_criteria,
-             'submit_button_text': 'Submit your assessment & review another response',
-             'allow_latex': False,
-            'track_changes': '',
-=======
             'graded': 0,
             'must_grade': 5,
             'peer_due': dt.datetime(2000, 1, 1).replace(tzinfo=pytz.utc),
@@ -634,8 +582,8 @@ class TestPeerAssessmentRender(XBlockHandlerTestCase):
             'rubric_criteria': xblock.rubric_criteria,
             'submit_button_text': 'Submit your assessment & review another response',
             'allow_latex': False,
+            'track_changes': '',
             'time_zone': pytz.utc,
->>>>>>> upstream-1.1.12
         }
         self._assert_path_and_context(
             xblock, 'openassessmentblock/peer/oa_peer_turbo_mode.html',
@@ -657,11 +605,8 @@ class TestPeerAssessmentRender(XBlockHandlerTestCase):
             'rubric_criteria': xblock.rubric_criteria,
             'submit_button_text': 'Submit your assessment & review another response',
             'allow_latex': False,
-<<<<<<< HEAD
             'track_changes': '',
-=======
             'time_zone': pytz.utc,
->>>>>>> upstream-1.1.12
         }
         self._assert_path_and_context(
             xblock, 'openassessmentblock/peer/oa_peer_unavailable.html',
