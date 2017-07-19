@@ -228,15 +228,11 @@ OpenAssessment.PeerView.prototype = {
     **/
     peerAssessRequest: function(successFunction) {
         var view = this;
-<<<<<<< HEAD
-        var uuid = $('#openassessment__peer-assessment').data('submission-uuid');
+        var uuid = this.getUUID();
         var editedContent = '';
         if (this.trackChangesContent) {
             editedContent = this.trackChangesView.getEditedContent();
         }
-=======
-        var uuid = this.getUUID();
->>>>>>> upstream-1.1.12
 
         view.baseView.toggleActionError('peer', null);
         view.peerSubmitEnabled(false);
