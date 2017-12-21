@@ -27,5 +27,6 @@ script:
 branches:
     only:
       - master
+      - 'upstream-master'
 after_success:
   coveralls
