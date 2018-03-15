@@ -402,6 +402,8 @@ class AssessmentWorkflow(TimeStampedModel, StatusModel):
                     assessment_completed_at=now(),
                 )
             )
+        except AssessmentWorkflowStep.MultipleObjectsReturned:
+            self.steps.filter(name=self.STATUS.staff).first()
 
         # Do not return steps that are not recognized in the AssessmentWorkflow.
         steps = list(self.steps.filter(name__in=AssessmentWorkflow.STEPS))
