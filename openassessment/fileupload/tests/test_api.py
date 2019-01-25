@@ -1,29 +1,26 @@
 # -*- coding: utf-8 -*-
 
-import boto
-from boto.s3.key import Key
-import ddt
-
 import json
-from mock import patch, Mock
 import os
 import shutil
 import tempfile
 import urllib
 from urlparse import urlparse
 
-from django.conf import settings
-from django.test import TestCase
-from django.test.utils import override_settings
-from django.core.urlresolvers import reverse
-from django.contrib.auth import get_user_model
-
+import boto
+from boto.s3.key import Key
+import ddt
+from mock import Mock, patch
 from moto import mock_s3
-from mock import patch
 from nose.tools import raises
 
-from openassessment.fileupload import api
-from openassessment.fileupload import exceptions
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.core.urlresolvers import reverse_lazy
+from django.test import TestCase
+from django.test.utils import override_settings
+
+from openassessment.fileupload import api, exceptions, urls
 from openassessment.fileupload import views_filesystem as views
 from openassessment.fileupload.backends.base import Settings as FileUploadSettings
 from openassessment.fileupload.backends.filesystem import get_cache as get_filesystem_cache
@@ -272,7 +269,7 @@ class TestFileUploadServiceWithFilesystemBackend(TestCase):
         self.assertEqual('application/octet-stream', download_response["Content-Type"])
 
     def test_upload_with_unauthorized_key(self):
-        upload_url = reverse("openassessment-filesystem-storage", kwargs={'key': self.key_name})
+        upload_url = reverse_lazy("openassessment-filesystem-storage", kwargs={'key': self.key_name})
 
         cache_before_request = get_filesystem_cache().get(self.key_name)
         upload_response = self.client.put(upload_url, data=self.content.read(), content_type=self.content_type)
@@ -282,7 +279,7 @@ class TestFileUploadServiceWithFilesystemBackend(TestCase):
         self.assertIsNone(cache_after_request)
 
     def test_download_url_with_unauthorized_key(self):
-        download_url = reverse("openassessment-filesystem-storage", kwargs={'key': self.key_name})
+        download_url = reverse_lazy("openassessment-filesystem-storage", kwargs={'key': self.key_name})
         views.save_to_file(self.key_name, "uploaded content")
         download_response = self.client.get(download_url)
 
@@ -327,7 +324,7 @@ class TestSwiftBackend(TestCase):
         result = urlparse(url)
         self.assertEqual(result.scheme, u'http')
         self.assertEqual(result.netloc, u'www.example.com:12345')
-        self.assertEqual(result.path, u'/bucket_name/submissions_attachments/foo')
+        self.assertEqual(result.path, u'/v1/bucket_name/submissions_attachments/foo')
         self.assertIn(result.params, 'temp_url_sig=')
         self.assertIn(result.params, 'temp_url_expires=')
 

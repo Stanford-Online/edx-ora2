@@ -4,10 +4,12 @@ Tests for management command that uploads submission/assessment data.
 """
 from StringIO import StringIO
 import tarfile
+
 import boto
 import moto
-from openassessment.test_utils import CacheResetTest
+
 from openassessment.management.commands import upload_oa_data
+from openassessment.test_utils import CacheResetTest
 from openassessment.workflow import api as workflow_api
 from submissions import api as sub_api
 

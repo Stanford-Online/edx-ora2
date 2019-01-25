@@ -2,31 +2,21 @@
 Public interface for staff grading, used by students/course staff.
 """
 import logging
+
 from django.db import DatabaseError, transaction
 from django.utils.timezone import now
-from dogapi import dog_stats_api
 
+from openassessment.assessment.errors import StaffAssessmentInternalError, StaffAssessmentRequestError
+from openassessment.assessment.models import Assessment, AssessmentPart, InvalidRubricSelection, StaffWorkflow
+from openassessment.assessment.serializers import InvalidRubric, full_assessment_dict, rubric_from_dict
 from submissions import api as submissions_api
-
-from openassessment.assessment.models import (
-    Assessment, AssessmentFeedback, AssessmentPart,
-    InvalidRubricSelection, StaffWorkflow,
-)
-from openassessment.assessment.serializers import (
-    AssessmentFeedbackSerializer, RubricSerializer,
-    full_assessment_dict, rubric_from_dict, serialize_assessments,
-    InvalidRubric
-)
-from openassessment.assessment.errors import (
-    StaffAssessmentRequestError, StaffAssessmentInternalError
-)
 
 logger = logging.getLogger("openassessment.assessment.api.staff")
 
 STAFF_TYPE = "ST"
 
 
-def submitter_is_finished(submission_uuid, staff_requirements):
+def submitter_is_finished(submission_uuid, staff_requirements):  # pylint: disable=unused-argument
     """
     Determine if the submitter has finished their requirements for staff
     assessment. Always returns True.
@@ -134,7 +124,7 @@ def on_cancel(submission_uuid):
         raise StaffAssessmentInternalError(error_message)
 
 
-def get_score(submission_uuid, staff_requirements):
+def get_score(submission_uuid, staff_requirements):  # pylint: disable=unused-argument
     """
     Generate a score based on a completed assessment for the given submission.
     If no assessment has been completed for this submission, this will return

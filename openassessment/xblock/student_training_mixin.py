@@ -2,15 +2,16 @@
 Student training step in the OpenAssessment XBlock.
 """
 import logging
+
 from webob import Response
 from xblock.core import XBlock
+
 from openassessment.assessment.api import student_training
-from openassessment.workflow import api as workflow_api
 from openassessment.workflow.errors import AssessmentWorkflowError
 from openassessment.xblock.data_conversion import convert_training_examples_list_to_dict, create_submission_dict
+
 from .resolve_dates import DISTANT_FUTURE
 from .user_data import get_user_preferences
-
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +58,60 @@ class StudentTrainingMixin(object):
         else:
             return self.render_assessment(path, context)
 
+    def _parse_answer_dict(self, answer):
+        """
+        Helper to parse answer as a fully-qualified dict.
+        """
+        parts = answer.get('parts', [])
+        if parts and isinstance(parts[0], dict):
+            if isinstance(parts[0].get('text'), basestring):
+                return create_submission_dict({'answer': answer}, self.prompts)
+
+    def _parse_answer_list(self, answer):
+        """
+        Helper to parse answer as a list of strings.
+        """
+        if answer and isinstance(answer[0], basestring):
+            return self._parse_answer_string(answer[0])
+        elif len(answer) == 0:
+            return self._parse_answer_string("")
+
+    def _parse_answer_string(self, answer):
+        """
+        Helper to parse answer as a plain string
+        """
+        return create_submission_dict({'answer': {'parts': [{'text': answer}]}}, self.prompts)
+
+    def _parse_example(self, example):
+        """
+        EDUCATOR-1263: examples are serialized in a myriad of different ways, we need to be robust to all of them.
+
+        Types of serialized example['answer'] we handle here:
+        -fully specified: {'answer': {'parts': [{'text': <response_string>}]}}
+        -list of string: {'answer': [<response_string>]}
+        -just a string: {'answer': <response_string>}
+        """
+        if not example:
+            return (
+                {},
+                "No training example was returned from the API for student with Submission UUID {}".format(
+                    self.submission_uuid
+                )
+            )
+        answer = example['answer']
+        submission_dict = None
+        if isinstance(answer, basestring):
+            submission_dict = self._parse_answer_string(answer)
+        elif isinstance(answer, dict):
+            submission_dict = self._parse_answer_dict(answer)
+        elif isinstance(answer, list):
+            submission_dict = self._parse_answer_list(answer)
+
+        return (submission_dict, "") or (
+            {},
+            "Improperly formatted example, cannot render student training. Example: {}".format(example)
+        )
+
     def training_path_and_context(self):
         """
         Return the template path and context used to render the student training step.
@@ -77,6 +132,7 @@ class StudentTrainingMixin(object):
 
         # add allow_latex field to the context
         context['allow_latex'] = self.allow_latex
+        context['prompts_type'] = self.prompts_type
         context['user_timezone'] = user_preferences['user_timezone']
         context['user_language'] = user_preferences['user_language']
 
@@ -127,19 +183,18 @@ class StudentTrainingMixin(object):
                 },
                 examples
             )
-            if example:
-                context['training_essay'] = create_submission_dict({'answer': example['answer']}, self.prompts)
+
+            training_essay_context, error_message = self._parse_example(example)
+            if error_message:
+                logger.error(error_message)
+                template = "openassessmentblock/student_training/student_training_error.html"
+            else:
+                context['training_essay'] = training_essay_context
                 context['training_rubric'] = {
                     'criteria': example['rubric']['criteria'],
                     'points_possible': example['rubric']['points_possible']
                 }
                 template = 'openassessmentblock/student_training/student_training.html'
-            else:
-                logger.error(
-                    "No training example was returned from the API for student "
-                    "with Submission UUID {}".format(self.submission_uuid)
-                )
-                template = "openassessmentblock/student_training/student_training_error.html"
 
         return template, context
 

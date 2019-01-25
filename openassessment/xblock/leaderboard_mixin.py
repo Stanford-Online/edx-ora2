@@ -1,12 +1,11 @@
 """
 Leaderboard step in the OpenAssessment XBlock.
 """
-from django.utils.translation import ugettext as _
 from xblock.core import XBlock
 
-from submissions import api as sub_api
+from django.utils.translation import ugettext as _
 
-from openassessment.assessment.errors import SelfAssessmentError, PeerAssessmentError
+from openassessment.assessment.errors import PeerAssessmentError, SelfAssessmentError
 from openassessment.fileupload import api as file_upload_api
 from openassessment.fileupload.exceptions import FileUploadError
 from openassessment.xblock.data_conversion import create_submission_dict
@@ -24,7 +23,7 @@ class LeaderboardMixin(object):
     """
 
     @XBlock.handler
-    def render_leaderboard(self, data, suffix=''):
+    def render_leaderboard(self, data, suffix=''):  # pylint: disable=unused-argument
         """
         Render the leaderboard.
 
@@ -37,6 +36,8 @@ class LeaderboardMixin(object):
         Returns:
             unicode: HTML content of the leaderboard.
         """
+        # Import is placed here to avoid model import at project startup.
+        from submissions import api as sub_api
         # Retrieve the status of the workflow.  If no workflows have been
         # started this will be an empty dict, so status will be None.
         workflow = self.get_workflow_info()
@@ -63,6 +64,8 @@ class LeaderboardMixin(object):
         Returns:
             template_path (string), tuple of context (dict)
         """
+        # Import is placed here to avoid model import at project startup.
+        from submissions import api as sub_api
 
         # Retrieve top scores from the submissions API
         # Since this uses the read-replica and caches the results,
@@ -101,6 +104,7 @@ class LeaderboardMixin(object):
 
         context = {'topscores': scores,
                    'allow_latex': self.allow_latex,
+                   'prompts_type': self.prompts_type,
                    'file_upload_type': self.file_upload_type,
                    'xblock_id': self.get_xblock_id()}
 

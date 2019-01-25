@@ -3,27 +3,24 @@ Studio editing view for OpenAssessment XBlock.
 """
 import copy
 import logging
-import pkg_resources
 from uuid import uuid4
-from xml import UpdateFromXmlError
 
-from django.conf import settings
-from django.template import Context
-from django.template.loader import get_template
-from django.utils.translation import ugettext as _, ugettext_lazy
+import pkg_resources
 from voluptuous import MultipleInvalid
 from xblock.core import XBlock
 from xblock.fields import List, Scope
 from xblock.fragment import Fragment
 
+from django.conf import settings
+from django.template.loader import get_template
+from django.utils.translation import ugettext_lazy
+
+from openassessment.xblock.data_conversion import (create_rubric_dict, make_django_template_key,
+                                                   update_assessments_format)
 from openassessment.xblock.defaults import DEFAULT_EDITOR_ASSESSMENTS_ORDER, DEFAULT_RUBRIC_FEEDBACK_TEXT
-from openassessment.xblock.validation import validator
-from openassessment.xblock.data_conversion import (
-    create_rubric_dict, make_django_template_key, update_assessments_format
-)
-from openassessment.xblock.schema import EDITOR_UPDATE_SCHEMA
 from openassessment.xblock.resolve_dates import resolve_dates
-from openassessment.xblock.xml import serialize_examples_to_xml_str, parse_examples_from_xml_str
+from openassessment.xblock.schema import EDITOR_UPDATE_SCHEMA
+from openassessment.xblock.validation import validator
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +58,7 @@ class StudioMixin(object):
         help="The order to display assessments in the editor."
     )
 
-    def studio_view(self, context=None):
+    def studio_view(self, context=None):  # pylint: disable=unused-argument
         """
         Render the OpenAssessment XBlock for editing in Studio.
 
@@ -73,7 +70,7 @@ class StudioMixin(object):
         """
         rendered_template = get_template(
             'openassessmentblock/edit/oa_edit.html'
-        ).render(Context(self.editor_context()))
+        ).render(self.editor_context())
         fragment = Fragment(rendered_template)
         if settings.DEBUG:
             self.add_javascript_files(fragment, "static/js/src/oa_shared.js")
@@ -132,6 +129,7 @@ class StudioMixin(object):
         feedback_default_text = copy.deepcopy(self.rubric_feedback_default_text)
         if not feedback_default_text:
             feedback_default_text = DEFAULT_RUBRIC_FEEDBACK_TEXT
+        course_id = self.location.course_key if hasattr(self, 'location') else None
 
         track_changes = copy.deepcopy(self.track_changes)
         if not track_changes:
@@ -139,6 +137,7 @@ class StudioMixin(object):
 
         return {
             'prompts': self.prompts,
+            'prompts_type': self.prompts_type,
             'title': self.title,
             'submission_due': submission_due,
             'submission_start': submission_start,
@@ -158,11 +157,12 @@ class StudioMixin(object):
                 make_django_template_key(asmnt)
                 for asmnt in self.editor_assessments_order
             ],
+            'base_asset_url': self._get_base_url_path_for_course_assets(course_id),
             'is_released': self.is_released(),
         }
 
     @XBlock.json_handler
-    def update_editor_context(self, data, suffix=''):
+    def update_editor_context(self, data, suffix=''):  # pylint: disable=unused-argument
         """
         Update the XBlock's configuration.
 
@@ -186,15 +186,12 @@ class StudioMixin(object):
             logger.exception('Editor context is invalid')
             return {'success': False, 'msg': self._('Error updating XBlock configuration')}
 
-        # Check that the editor assessment order contains all the assessments.  We are more flexible on example-based.
-        given_without_example_based = set(data['editor_assessments_order']) - {'example-based-assessment'}
-        if set(DEFAULT_EDITOR_ASSESSMENTS_ORDER) != given_without_example_based:
+        # Check that the editor assessment order contains all the assessments.
+        current_order = set(data['editor_assessments_order'])
+        if set(DEFAULT_EDITOR_ASSESSMENTS_ORDER) != current_order:
             # Backwards compatibility: "staff-assessment" may not be present.
             # If that is the only problem with this data, just add it manually and continue.
-            if set(DEFAULT_EDITOR_ASSESSMENTS_ORDER) == (
-                # Check the given set, minus example-based, plus staff
-                given_without_example_based | {'staff-assessment'}
-            ):
+            if set(DEFAULT_EDITOR_ASSESSMENTS_ORDER) == current_order | {'staff-assessment'}:
                 data['editor_assessments_order'].append('staff-assessment')
                 logger.info('Backwards compatibility: editor_assessments_order now contains staff-assessment')
             else:
@@ -223,27 +220,6 @@ class StudioMixin(object):
                 if 'name' not in option:
                     option['name'] = uuid4().hex
 
-        # If example based assessment is enabled, we replace it's xml definition with the dictionary
-        # definition we expect for validation and storing.
-        for assessment in data['assessments']:
-            if assessment['name'] == 'example-based-assessment':
-                try:
-                    assessment['examples'] = parse_examples_from_xml_str(assessment['examples_xml'])
-                except UpdateFromXmlError:
-                    return {'success': False, 'msg': self._(
-                        u'Validation error: There was an error in the XML definition of the '
-                        u'examples provided by the user. Please correct the XML definition before saving.')
-                    }
-                except KeyError:
-                    return {'success': False, 'msg': self._(
-                        u'Validation error: No examples were provided for example based assessment.'
-                    )}
-                    # This is where we default to EASE for problems which are edited in the GUI
-                assessment['algorithm_id'] = 'ease'
-            if assessment['name'] == 'student-training':
-                for example in assessment['examples']:
-                    example['answer'] = {'parts': [{'text': text} for text in example['answer']]}
-
         xblock_validator = validator(self, self._)
         success, msg = xblock_validator(
             create_rubric_dict(data['prompts'], data['criteria']),
@@ -265,6 +241,7 @@ class StudioMixin(object):
         self.title = data['title']
         self.display_name = data['title']
         self.prompts = data['prompts']
+        self.prompts_type = data['prompts_type']
         self.rubric_criteria = data['criteria']
         self.rubric_assessments = data['assessments']
         self.editor_assessments_order = data['editor_assessments_order']
@@ -287,7 +264,7 @@ class StudioMixin(object):
         return {'success': True, 'msg': self._(u'Successfully updated OpenAssessment XBlock')}
 
     @XBlock.json_handler
-    def check_released(self, data, suffix=''):
+    def check_released(self, data, suffix=''):  # pylint: disable=unused-argument
         """
         Check whether the problem has been released.
 
@@ -367,13 +344,6 @@ class StudioMixin(object):
         else:
             assessments['training'] = {'examples': [student_training_template], 'template': student_training_template}
 
-        example_based_assessment = self.get_assessment_module('example-based-assessment')
-
-        if example_based_assessment:
-            assessments['example_based_assessment'] = {
-                'examples': serialize_examples_to_xml_str(example_based_assessment)
-            }
-
         return assessments
 
     def _editor_assessments_order_context(self):
@@ -390,19 +360,13 @@ class StudioMixin(object):
         # since the user last saved their ordering.
         effective_order = copy.deepcopy(DEFAULT_EDITOR_ASSESSMENTS_ORDER)
 
-        # If the problem already contains example-based assessment
-        # then allow the editor to display example-based assessments,
-        # which is not included in the default
-        enabled_assessments = [asmnt['name'] for asmnt in self.valid_assessments]
-        if 'example-based-assessment' in enabled_assessments:
-            effective_order.insert(0, 'example-based-assessment')
-
         # Account for changes the user has made to the default order
         user_order = copy.deepcopy(self.editor_assessments_order)
         effective_order = self._subset_in_relative_order(effective_order, user_order)
 
         # Account for inconsistencies between the user's order and the problems
         # that are currently enabled in the problem (These cannot be changed)
+        enabled_assessments = [asmnt['name'] for asmnt in self.valid_assessments]
         enabled_ordered_assessments = [
             assessment for assessment in enabled_assessments if assessment in user_order
         ]
@@ -421,3 +385,17 @@ class StudioMixin(object):
             for i in range(len(sorted_superset_indices)):
                 superset[sorted_superset_indices[i]] = subset[i]
         return superset
+
+    def _get_base_url_path_for_course_assets(self, course_key):
+        """
+        Returns base url path for course assets
+        """
+        if course_key is None:
+            return None
+
+        placeholder_id = uuid4().hex
+        # create a dummy asset location with a fake but unique name. strip off the name, and return it
+        url_path = unicode(course_key.make_asset_key('asset', placeholder_id).for_branch(None))
+        if not url_path.startswith('/'):
+            url_path = '/' + url_path
+        return url_path.replace(placeholder_id, '')

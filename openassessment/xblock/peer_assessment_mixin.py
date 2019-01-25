@@ -8,16 +8,15 @@ import logging
 from webob import Response
 from xblock.core import XBlock
 
-from openassessment.assessment.api import peer as peer_api
-from openassessment.assessment.errors import (
-    PeerAssessmentRequestError, PeerAssessmentInternalError, PeerAssessmentWorkflowError
-)
+from openassessment.assessment.errors import (PeerAssessmentInternalError, PeerAssessmentRequestError,
+                                              PeerAssessmentWorkflowError)
 from openassessment.workflow.errors import AssessmentWorkflowError
 from openassessment.xblock.defaults import DEFAULT_RUBRIC_FEEDBACK_TEXT
-from .data_conversion import create_rubric_dict
+
+from .data_conversion import (clean_criterion_feedback, create_rubric_dict, create_submission_dict,
+                              verify_assessment_parameters)
 from .resolve_dates import DISTANT_FUTURE
 from .user_data import get_user_preferences
-from .data_conversion import clean_criterion_feedback, create_submission_dict, verify_assessment_parameters
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +36,7 @@ class PeerAssessmentMixin(object):
 
     @XBlock.json_handler
     @verify_assessment_parameters
-    def peer_assess(self, data, suffix=''):
+    def peer_assess(self, data, suffix=''):  # pylint: disable=unused-argument
         """Place a peer assessment into OpenAssessment system
 
         Assess a Peer Submission.  Performs basic workflow validation to ensure
@@ -56,6 +55,8 @@ class PeerAssessmentMixin(object):
             and "msg" (unicode) containing additional information if an error occurs.
 
         """
+        # Import is placed here to avoid model import at project startup.
+        from openassessment.assessment.api import peer as peer_api
         if self.submission_uuid is None:
             return {
                 'success': False, 'msg': self._('You must submit a response before you can perform a peer assessment.')
@@ -129,7 +130,7 @@ class PeerAssessmentMixin(object):
             return {'success': False, 'msg': self._('Could not load peer assessment.')}
 
     @XBlock.handler
-    def render_peer_assessment(self, data, suffix=''):
+    def render_peer_assessment(self, data, suffix=''):  # pylint: disable=unused-argument
         """Renders the Peer Assessment HTML section of the XBlock
 
         Generates the peer assessment HTML for the first section of an Open
@@ -165,6 +166,8 @@ class PeerAssessmentMixin(object):
             tuple of (template_path, context_dict)
 
         """
+        # Import is placed here to avoid model import at project startup.
+        from openassessment.assessment.api import peer as peer_api
         path = 'openassessmentblock/peer/oa_peer_unavailable.html'
         finished = False
         problem_closed, reason, start_date, due_date = self.is_closed(step="peer-assessment")
@@ -173,6 +176,7 @@ class PeerAssessmentMixin(object):
         context_dict = {
             "rubric_criteria": self.rubric_criteria_with_labels,
             "allow_latex": self.allow_latex,
+            "prompts_type": self.prompts_type,
             "user_timezone": user_preferences['user_timezone'],
             "user_language": user_preferences['user_language'],
             "xblock_id": self.get_xblock_id(),
@@ -277,6 +281,8 @@ class PeerAssessmentMixin(object):
             dict: The serialized submission model.
 
         """
+        # Import is placed here to avoid model import at project startup.
+        from openassessment.assessment.api import peer as peer_api
         peer_submission = False
         try:
             peer_submission = peer_api.get_submission_to_assess(

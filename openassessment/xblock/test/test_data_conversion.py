@@ -4,13 +4,11 @@ Test OpenAssessment XBlock data_conversion.
 """
 
 import ddt
-import mock
 
 from django.test import TestCase
 
-from openassessment.xblock.data_conversion import (
-    create_prompts_list, create_submission_dict, prepare_submission_for_serialization, update_assessments_format
-)
+from openassessment.xblock.data_conversion import (create_prompts_list, create_submission_dict,
+                                                   prepare_submission_for_serialization, update_assessments_format)
 
 
 @ddt.ddt
@@ -57,6 +55,9 @@ class DataConversionTest(TestCase):
 
     @ddt.data(
         ([{'answer': 'Ans'}], [{'answer': {'parts': [{'text': 'Ans'}]}}]),
+        ([{'answer': ['Ans']}], [{'answer': {'parts': [{'text': 'Ans'}]}}]),
+        ([{'answer': ['Ans', 'Ans1']}], [{'answer': {'parts': [{'text': 'Ans'},{'text': 'Ans1'}]}}]),
+        ([{'answer': []}], [{'answer': []}]),
     )
     @ddt.unpack
     def test_update_assessments_format(self, input, output):

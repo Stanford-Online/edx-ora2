@@ -5,40 +5,37 @@ import datetime as dt
 import json
 import logging
 import os
-import pkg_resources
 
-import pytz
-
-from django.conf import settings
-from django.template.context import Context
-from django.template.loader import get_template
-from webob import Response
 from lazy import lazy
-
+import pkg_resources
+import pytz
+from webob import Response
 from xblock.core import XBlock
-from xblock.fields import List, Scope, String, Boolean, Integer
+from xblock.fields import Boolean, Integer, List, Scope, String
 from xblock.fragment import Fragment
 
+from django.conf import settings
+from django.template.loader import get_template
+
+from openassessment.workflow.errors import AssessmentWorkflowError
+from openassessment.xblock.course_items_listing_mixin import CourseItemsListingMixin
+from openassessment.xblock.data_conversion import create_prompts_list, create_rubric_dict, update_assessments_format
+from openassessment.xblock.defaults import *  # pylint: disable=wildcard-import, unused-wildcard-import
 from openassessment.xblock.grade_mixin import GradeMixin
 from openassessment.xblock.leaderboard_mixin import LeaderboardMixin
-from openassessment.xblock.defaults import *  # pylint: disable=wildcard-import, unused-wildcard-import
+from openassessment.xblock.lms_mixin import LmsCompatibilityMixin
 from openassessment.xblock.message_mixin import MessageMixin
 from openassessment.xblock.peer_assessment_mixin import PeerAssessmentMixin
-from openassessment.xblock.lms_mixin import LmsCompatibilityMixin
+from openassessment.xblock.resolve_dates import DISTANT_FUTURE, DISTANT_PAST, parse_date_value, resolve_dates
 from openassessment.xblock.self_assessment_mixin import SelfAssessmentMixin
-from openassessment.xblock.submission_mixin import SubmissionMixin
-from openassessment.xblock.studio_mixin import StudioMixin
-from openassessment.xblock.xml import parse_from_xml, serialize_content_to_xml
 from openassessment.xblock.staff_area_mixin import StaffAreaMixin
-from openassessment.xblock.workflow_mixin import WorkflowMixin
 from openassessment.xblock.staff_assessment_mixin import StaffAssessmentMixin
-from openassessment.workflow.errors import AssessmentWorkflowError
 from openassessment.xblock.student_training_mixin import StudentTrainingMixin
+from openassessment.xblock.studio_mixin import StudioMixin
+from openassessment.xblock.submission_mixin import SubmissionMixin
 from openassessment.xblock.validation import validator
-from openassessment.xblock.resolve_dates import resolve_dates, parse_date_value, DISTANT_PAST, DISTANT_FUTURE
-from openassessment.xblock.data_conversion import create_prompts_list, create_rubric_dict, update_assessments_format
-from openassessment.xblock.course_items_listing_mixin import CourseItemsListingMixin
-
+from openassessment.xblock.workflow_mixin import WorkflowMixin
+from openassessment.xblock.xml import parse_from_xml, serialize_content_to_xml
 
 logger = logging.getLogger(__name__)
 
@@ -83,7 +80,6 @@ UI_MODELS = {
 
 VALID_ASSESSMENT_TYPES = [
     "student-training",
-    "example-based-assessment",
     "peer-assessment",
     "self-assessment",
     "staff-assessment"
@@ -139,7 +135,7 @@ class OpenAssessmentBlock(MessageMixin,
     )
 
     allow_file_upload = Boolean(
-        default=None,
+        default=False,
         scope=Scope.content,
         help="Do not use. For backwards compatibility only."
     )
@@ -184,6 +180,12 @@ class OpenAssessmentBlock(MessageMixin,
         default="",
         scope=Scope.content,
         help="URL to track changes library, currently ICE"
+    )
+
+    prompts_type = String(
+        default='text',
+        scope=Scope.content,
+        help="The type of prompt. html or text"
     )
 
     rubric_criteria = List(
@@ -417,6 +419,7 @@ class OpenAssessmentBlock(MessageMixin,
         context_dict = {
             "title": self.title,
             "prompts": self.prompts,
+            "prompts_type": self.prompts_type,
             "rubric_assessments": ui_models,
             "show_staff_area": self.is_course_staff and not self.in_studio_preview,
         }
@@ -463,7 +466,7 @@ class OpenAssessmentBlock(MessageMixin,
             additional_js=["static/js/lib/backgrid/backgrid%s.js" % min_postfix]
         )
 
-    def grade_available_responses_view(self, context=None):
+    def grade_available_responses_view(self, context=None):  # pylint: disable=unused-argument
         """Grade Available Responses view.
 
         Auxiliary view which displays the staff grading area
@@ -497,8 +500,7 @@ class OpenAssessmentBlock(MessageMixin,
         Creates a fragment for display.
 
         """
-        context = Context(context_dict)
-        fragment = Fragment(template.render(context))
+        fragment = Fragment(template.render(context_dict))
 
         if additional_css is None:
             additional_css = []
@@ -663,10 +665,6 @@ class OpenAssessmentBlock(MessageMixin,
                 load('static/xml/unicode.xml')
             ),
             (
-                "OpenAssessmentBlock Example Based Rubric",
-                load('static/xml/example_based_example.xml')
-            ),
-            (
                 "OpenAssessmentBlock Poverty Rubric",
                 load('static/xml/poverty_rubric_example.xml')
             ),
@@ -727,6 +725,7 @@ class OpenAssessmentBlock(MessageMixin,
         block.submission_due = config['submission_due']
         block.title = config['title']
         block.prompts = config['prompts']
+        block.prompts_type = config['prompts_type']
         block.text_response = config['text_response']
         block.file_upload_response = config['file_upload_response']
         block.allow_file_upload = config['allow_file_upload']
@@ -734,6 +733,7 @@ class OpenAssessmentBlock(MessageMixin,
         block.white_listed_file_types_string = config['white_listed_file_types']
         block.allow_latex = config['allow_latex']
         block.leaderboard_show = config['leaderboard_show']
+        block.group_access = config['group_access']
 
         return block
 
@@ -846,8 +846,7 @@ class OpenAssessmentBlock(MessageMixin,
             context_dict = {}
 
         template = get_template(path)
-        context = Context(context_dict)
-        return Response(template.render(context), content_type='application/html', charset='UTF-8')
+        return Response(template.render(context_dict), content_type='application/html', charset='UTF-8')
 
     def add_xml_to_node(self, node):
         """
@@ -865,7 +864,7 @@ class OpenAssessmentBlock(MessageMixin,
         Returns:
             Response: A response object with an HTML body.
         """
-        context = Context({'error_msg': error_msg})
+        context = {'error_msg': error_msg}
         template = get_template('openassessmentblock/oa_error.html')
         return Response(template.render(context), content_type='application/html', charset='UTF-8')
 
@@ -1089,7 +1088,7 @@ class OpenAssessmentBlock(MessageMixin,
         )
 
     @XBlock.json_handler
-    def publish_event(self, data, suffix=''):
+    def publish_event(self, data, suffix=''):  # pylint: disable=unused-argument
         """
         Publish the given data to an event.
 

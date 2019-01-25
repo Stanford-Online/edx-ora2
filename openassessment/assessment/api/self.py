@@ -2,20 +2,14 @@
 Public interface for self-assessment.
 """
 import logging
+
 from django.db import DatabaseError, transaction
-from dogapi import dog_stats_api
 
-from submissions.api import get_submission_and_student, SubmissionNotFoundError
-from openassessment.assessment.serializers import (
-    InvalidRubric, full_assessment_dict, rubric_from_dict, serialize_assessments
-)
-from openassessment.assessment.models import (
-    Assessment, AssessmentPart, InvalidRubricSelection
-)
-from openassessment.assessment.errors import (
-    SelfAssessmentRequestError, SelfAssessmentInternalError
-)
-
+from openassessment.assessment.errors import SelfAssessmentInternalError, SelfAssessmentRequestError
+from openassessment.assessment.models import Assessment, AssessmentPart, InvalidRubricSelection
+from openassessment.assessment.serializers import (InvalidRubric, full_assessment_dict, rubric_from_dict,
+                                                   serialize_assessments)
+from submissions.api import SubmissionNotFoundError, get_submission_and_student
 
 # Assessments are tagged as "self-evaluation"
 SELF_TYPE = "SE"
@@ -23,7 +17,7 @@ SELF_TYPE = "SE"
 logger = logging.getLogger("openassessment.assessment.api.self")
 
 
-def submitter_is_finished(submission_uuid, self_requirements):
+def submitter_is_finished(submission_uuid, self_requirements):  # pylint: disable=unused-argument
     """
     Check whether a self-assessment has been completed for a submission.
 
@@ -62,7 +56,7 @@ def assessment_is_finished(submission_uuid, self_requirements):
     return submitter_is_finished(submission_uuid, self_requirements)
 
 
-def get_score(submission_uuid, self_requirements):
+def get_score(submission_uuid, self_requirements):  # pylint: disable=unused-argument
     """
     Get the score for this particular assessment.
 
@@ -330,15 +324,3 @@ def _log_assessment(assessment, submission):
             rubric_content_hash=assessment.rubric.content_hash
         )
     )
-
-    tags = [
-        u"course_id:{course_id}".format(course_id=submission['student_item']['course_id']),
-        u"item_id:{item_id}".format(item_id=submission['student_item']['item_id']),
-        u"type:self"
-    ]
-
-    score_percentage = assessment.to_float()
-    if score_percentage is not None:
-        dog_stats_api.histogram('openassessment.assessment.score_percentage', score_percentage, tags=tags)
-
-    dog_stats_api.increment('openassessment.assessment.count', tags=tags)

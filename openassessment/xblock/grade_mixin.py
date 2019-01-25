@@ -2,23 +2,17 @@
 Grade step in the OpenAssessment XBlock.
 """
 import copy
-from lazy import lazy
 import json
+
+from lazy import lazy
+from xblock.core import XBlock
 
 from django.utils.translation import ugettext as _
 
-from xblock.core import XBlock
-
-from openassessment.assessment.api import ai as ai_api
-from openassessment.assessment.api import peer as peer_api
-from openassessment.assessment.api import self as self_api
-from openassessment.assessment.api import staff as staff_api
-from openassessment.assessment.errors import SelfAssessmentError, PeerAssessmentError
-from submissions import api as sub_api
-from openassessment.assessment.models import TrackChanges
-
-from data_conversion import create_submission_dict
 from data_conversion import add_trackchanges_to_submission_dict
+from data_conversion import create_submission_dict
+from openassessment.assessment.errors import PeerAssessmentError, SelfAssessmentError
+from openassessment.assessment.models import TrackChanges
 
 
 class GradeMixin(object):
@@ -33,7 +27,7 @@ class GradeMixin(object):
     """
 
     @XBlock.handler
-    def render_grade(self, data, suffix=''):
+    def render_grade(self, data, suffix=''):  # pylint: disable=unused-argument
         """
         Render the grade step.
 
@@ -46,6 +40,9 @@ class GradeMixin(object):
         Returns:
             unicode: HTML content of the grade step.
         """
+        # Import is placed here to avoid model import at project startup.
+        from submissions import api as sub_api
+
         # Retrieve the status of the workflow.  If no workflows have been
         # started this will be an empty dict, so status will be None.
         workflow = self.get_workflow_info()
@@ -89,12 +86,17 @@ class GradeMixin(object):
         Returns:
             tuple of context (dict), template_path (string)
         """
+        # Import is placed here to avoid model import at project startup.
+        from openassessment.assessment.api import peer as peer_api
+        from openassessment.assessment.api import self as self_api
+        from openassessment.assessment.api import staff as staff_api
+        from submissions import api as sub_api
+
         # Peer specific stuff...
         assessment_steps = self.assessment_steps
         submission_uuid = workflow['submission_uuid']
 
         staff_assessment = None
-        example_based_assessment = None
         self_assessment = None
         feedback = None
         peer_assessments = []
@@ -112,11 +114,6 @@ class GradeMixin(object):
         if "self-assessment" in assessment_steps:
             self_assessment = self._assessment_grade_context(
                 self_api.get_assessment(submission_uuid)
-            )
-
-        if "example-based-assessment" in assessment_steps:
-            example_based_assessment = self._assessment_grade_context(
-                ai_api.get_latest_assessment(submission_uuid)
             )
 
         raw_staff_assessment = staff_api.get_latest_staff_assessment(submission_uuid)
@@ -150,11 +147,11 @@ class GradeMixin(object):
                 submission_uuid,
                 peer_assessments=peer_assessments,
                 self_assessment=self_assessment,
-                example_based_assessment=example_based_assessment,
                 staff_assessment=staff_assessment,
             ),
             'file_upload_type': self.file_upload_type,
             'allow_latex': self.allow_latex,
+            'prompts_type': self.prompts_type,
             'file_urls': self.get_download_urls_from_submission(student_submission),
             'xblock_id': self.get_xblock_id()
         }
@@ -189,7 +186,7 @@ class GradeMixin(object):
         )
 
     @XBlock.json_handler
-    def submit_feedback(self, data, suffix=''):
+    def submit_feedback(self, data, suffix=''):  # pylint: disable=unused-argument
         """
         Submit feedback on an assessment.
 
@@ -204,6 +201,9 @@ class GradeMixin(object):
             Dict with keys 'success' (bool) and 'msg' (unicode)
 
         """
+        # Import is placed here to avoid model import at project startup.
+        from openassessment.assessment.api import peer as peer_api
+
         feedback_text = data.get('feedback_text', u'')
         feedback_options = data.get('feedback_options', list())
 
@@ -228,7 +228,7 @@ class GradeMixin(object):
             return {'success': True, 'msg': self._(u"Feedback saved.")}
 
     def grade_details(
-            self, submission_uuid, peer_assessments, self_assessment, example_based_assessment, staff_assessment,
+            self, submission_uuid, peer_assessments, self_assessment, staff_assessment,
             is_staff=False
     ):
         """
@@ -238,7 +238,6 @@ class GradeMixin(object):
             submission_uuid (str): The id of the submission being graded.
             peer_assessments (list of dict): Serialized assessment models from the peer API.
             self_assessment (dict): Serialized assessment model from the self API
-            example_based_assessment (dict): Serialized assessment model from the example-based API
             staff_assessment (dict): Serialized assessment model from the staff API
             is_staff (bool): True if the grade details are being displayed to staff, else False.
                 Default value is False (meaning grade details are being shown to the learner).
@@ -264,6 +263,11 @@ class GradeMixin(object):
                 ...
             }
         """
+        # Import is placed here to avoid model import at project startup.
+        from openassessment.assessment.api import peer as peer_api
+        from openassessment.assessment.api import self as self_api
+        from openassessment.assessment.api import staff as staff_api
+
         criteria = copy.deepcopy(self.rubric_criteria_with_labels)
 
         def has_feedback(assessments):
@@ -277,7 +281,10 @@ class GradeMixin(object):
                 Returns True if at least one assessment has feedback.
             """
             return any(
-                assessment.get('feedback', None) or has_feedback(assessment.get('individual_assessments', []))
+                (
+                    assessment and
+                    (assessment.get('feedback', None) or has_feedback(assessment.get('individual_assessments', [])))
+                )
                 for assessment in assessments
             )
 
@@ -288,8 +295,6 @@ class GradeMixin(object):
             median_scores = staff_api.get_assessment_scores_by_criteria(submission_uuid)
         elif "peer-assessment" in assessment_steps:
             median_scores = peer_api.get_assessment_median_scores(submission_uuid)
-        elif "example-based-assessment" in assessment_steps:
-            median_scores = ai_api.get_assessment_scores_by_criteria(submission_uuid)
         elif "self-assessment" in assessment_steps:
             median_scores = self_api.get_assessment_scores_by_criteria(submission_uuid)
 
@@ -302,7 +307,6 @@ class GradeMixin(object):
                 assessment_steps,
                 staff_assessment,
                 peer_assessments,
-                example_based_assessment,
                 self_assessment,
                 is_staff=is_staff,
             )
@@ -331,7 +335,7 @@ class GradeMixin(object):
 
     def _graded_assessments(
             self, submission_uuid, criterion, assessment_steps, staff_assessment, peer_assessments,
-            example_based_assessment, self_assessment, is_staff=False
+            self_assessment, is_staff=False
     ):
         """
         Returns an array of assessments with their associated grades.
@@ -373,9 +377,6 @@ class GradeMixin(object):
             }
         else:
             peer_assessment_part = None
-        example_based_assessment_part = _get_assessment_part(
-            _('Example-Based Grade'), _('Example-Based Comments'), criterion_name, example_based_assessment
-        )
         self_assessment_part = _get_assessment_part(
             _('Self Assessment Grade') if is_staff else _('Your Self Assessment'),
             _('Your Comments'),  # This is only used in the LMS student-facing view
@@ -389,8 +390,6 @@ class GradeMixin(object):
             assessments.append(staff_assessment_part)
         if peer_assessment_part:
             assessments.append(peer_assessment_part)
-        if example_based_assessment_part:
-            assessments.append(example_based_assessment_part)
         if self_assessment_part:
             assessments.append(self_assessment_part)
 
@@ -398,7 +397,7 @@ class GradeMixin(object):
         if len(assessments) > 0:
             first_assessment = assessments[0]
             option = first_assessment['option']
-            if option:
+            if option and option.get('points', None) != None:
                 first_assessment['points'] = option['points']
 
         return assessments
@@ -415,6 +414,9 @@ class GradeMixin(object):
             The option for the median peer grade.
 
         """
+        # Import is placed here to avoid model import at project startup.
+        from openassessment.assessment.api import peer as peer_api
+
         median_scores = peer_api.get_assessment_median_scores(submission_uuid)
         median_score = median_scores.get(criterion['name'], None)
 

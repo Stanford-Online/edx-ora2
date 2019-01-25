@@ -1,15 +1,15 @@
 import logging
 
-from xblock.core import XBlock
 from webob import Response
+from xblock.core import XBlock
 
 from openassessment.assessment.api import self as self_api
 from openassessment.workflow import api as workflow_api
-from submissions import api as submission_api
+
+from .data_conversion import (clean_criterion_feedback, create_rubric_dict, create_submission_dict,
+                              verify_assessment_parameters)
 from .resolve_dates import DISTANT_FUTURE
 from .user_data import get_user_preferences
-from .data_conversion import (clean_criterion_feedback, create_submission_dict,
-                              create_rubric_dict, verify_assessment_parameters)
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +52,8 @@ class SelfAssessmentMixin(object):
             SubmissionError: Error occurred while retrieving the current submission.
             SelfAssessmentRequestError: Error occurred while checking if we had a self-assessment.
         """
+        # Import is placed here to avoid model import at project startup.
+        from submissions import api as submission_api
 
         path = 'openassessmentblock/self/oa_self_unavailable.html'
         problem_closed, reason, start_date, due_date = self.is_closed(step="self-assessment")
@@ -59,6 +61,7 @@ class SelfAssessmentMixin(object):
 
         context = {
             'allow_latex': self.allow_latex,
+            'prompts_type': self.prompts_type,
             "xblock_id": self.get_xblock_id(),
             'user_timezone': user_preferences['user_timezone'],
             'user_language': user_preferences['user_language']
