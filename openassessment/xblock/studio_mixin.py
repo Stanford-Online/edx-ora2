@@ -131,10 +131,6 @@ class StudioMixin(object):
             feedback_default_text = DEFAULT_RUBRIC_FEEDBACK_TEXT
         course_id = self.location.course_key if hasattr(self, 'location') else None
 
-        track_changes = copy.deepcopy(self.track_changes)
-        if not track_changes:
-            track_changes = ''
-
         return {
             'prompts': self.prompts,
             'prompts_type': self.prompts_type,
@@ -143,7 +139,7 @@ class StudioMixin(object):
             'submission_start': submission_start,
             'assessments': assessments,
             'criteria': criteria,
-            'track_changes': track_changes,
+            'enable_track_changes': self.enable_track_changes,
             'feedbackprompt': self.rubric_feedback_prompt,
             'feedback_default_text': feedback_default_text,
             'text_response': self.text_response if self.text_response  else '',
@@ -232,9 +228,10 @@ class StudioMixin(object):
             return {'success': False, 'msg': self._('Validation error: {error}').format(error=msg)}
 
         # Calculate track_changes URL
-        track_changes_url = ''
+        enable_track_changes = False
         for assessment in data['assessments']:
-            track_changes_url = track_changes_url or assessment.get('track_changes', '')
+            if assessment['name'] == 'peer-assessment':
+                enable_track_changes = assessment.get('enable_track_changes', False)
 
         # At this point, all the input data has been validated,
         # so we can safely modify the XBlock fields.
@@ -245,7 +242,7 @@ class StudioMixin(object):
         self.rubric_criteria = data['criteria']
         self.rubric_assessments = data['assessments']
         self.editor_assessments_order = data['editor_assessments_order']
-        self.track_changes = track_changes_url
+        self.enable_track_changes = enable_track_changes
         self.rubric_feedback_prompt = data['feedback_prompt']
         self.rubric_feedback_default_text = data['feedback_default_text']
         self.submission_start = data['submission_start']

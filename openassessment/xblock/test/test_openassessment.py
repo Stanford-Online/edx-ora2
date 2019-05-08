@@ -170,7 +170,7 @@ class TestOpenAssessment(XBlockHandlerTestCase):
                 "peer": {
                     "must_grade": 5,
                     "must_be_graded_by": 3,
-                    "track_changes": "",
+                    "enable_track_changes": False,
                 }
             }
             mock_api.update_from_assessments.assert_called_once_with('test_submission', expected_reqs)

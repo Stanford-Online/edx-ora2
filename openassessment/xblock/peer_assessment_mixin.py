@@ -223,7 +223,7 @@ class PeerAssessmentMixin(object):
                     "Submit your assessment and move to response #{response_number}"
                 ).format(response_number=(count + 2))
 
-            context_dict['track_changes'] = assessment.get('track_changes', '')
+            context_dict['enable_track_changes'] = assessment.get('enable_track_changes', False)
 
         if workflow_status == "cancelled":
             path = 'openassessmentblock/peer/oa_peer_cancelled.html'

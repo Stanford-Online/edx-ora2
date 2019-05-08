@@ -1,15 +1,12 @@
 """
 Serialize and deserialize OpenAssessment XBlock content to/from XML.
 """
-
 from uuid import uuid4 as uuid
 import logging
 import json
 
 import dateutil.parser
 import defusedxml.ElementTree as safe_etree
-from django.core.exceptions import ValidationError as DjangoValidationError
-from django.core.validators import URLValidator
 import lxml.etree as etree
 import pytz
 
@@ -582,16 +579,9 @@ def parse_assessments_xml(assessments_root):
             assessment_dict['required'] = _parse_boolean(unicode(assessment.get('required')))
 
         # Assessment track_changes
-        if 'track_changes' in assessment.attrib:
-            track_changes_url = assessment.get('track_changes', '')
-            assessment_dict['track_changes'] = track_changes_url
-
-            validator = URLValidator()
-            if track_changes_url:
-                try:
-                    validator(track_changes_url)
-                except DjangoValidationError:
-                    raise UpdateFromXmlError('The "track_changes" value must be a URL string')
+        if 'enable_track_changes' in assessment.attrib:
+            enable_track_changes = _parse_boolean(unicode(assessment.get('enable_track_changes')))
+            assessment_dict['enable_track_changes'] = enable_track_changes
 
         # Training examples
         examples = assessment.findall('example')
@@ -685,8 +675,8 @@ def serialize_assessments(assessments_root, oa_block):
         if assessment_dict.get('required') is not None:
             assessment.set('required', unicode(assessment_dict['required']))
 
-        if assessment_dict.get('track_changes') is not None:
-            assessment.set('track_changes', unicode(assessment_dict.get('track_changes', '')))
+        if assessment_dict.get('enable_track_changes') is not None:
+            assessment.set('enable_track_changes', unicode(assessment_dict['enable_track_changes']))
 
         # Training examples
         examples = assessment_dict.get('examples', [])

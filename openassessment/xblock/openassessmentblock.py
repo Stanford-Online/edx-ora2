@@ -183,10 +183,10 @@ class OpenAssessmentBlock(MessageMixin,
         help="The type of prompt. html or text"
     )
 
-    track_changes = String(
-        default="",
-        scope=Scope.content,
-        help="URL to track changes library, currently ICE"
+    enable_track_changes = Boolean(
+        default=False,
+        scope=Scope.settings,
+        help="Enables peer assessment editing using the ICE library"
     )
 
     rubric_criteria = List(
@@ -533,11 +533,9 @@ class OpenAssessmentBlock(MessageMixin,
             # minified additional_js should be already included in 'make javascript'
             fragment.add_javascript(load("static/js/openassessment-lms.min.js"))
 
-        ui_models = self._create_ui_models()
-        track_changes_fragments = [x['track_changes'] for x in ui_models if x.get('track_changes', None)]
-        if track_changes_fragments:
-            for tr_frag in track_changes_fragments:
-                fragment.add_javascript_url(tr_frag)  # TODO: move the URL to course advanced setting
+        peer_assessment = self.get_assessment_module('peer-assessment')
+        if peer_assessment and peer_assessment.get('enable_track_changes', False):
+            fragment.add_javascript_url(self.runtime.local_resource_url(self, 'static/js/lib/ice.min.js'))
             if settings.DEBUG:
                 fragment.add_css_url(self.runtime.local_resource_url(self, "static/css/trackchanges.css"))
             else:

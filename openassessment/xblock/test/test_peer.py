@@ -310,7 +310,7 @@ class TestPeerAssessmentRender(XBlockHandlerTestCase):
             'review_num': 1,
             'allow_latex': False,
             'prompts_type': 'text',
-            'track_changes': '',
+            'enable_track_changes': False,
             'user_timezone': pytz.utc,
             'user_language': 'en'
         }
@@ -329,7 +329,7 @@ class TestPeerAssessmentRender(XBlockHandlerTestCase):
             'review_num': 1,
             'allow_latex': False,
             'prompts_type': 'text',
-            'track_changes': '',
+            'enable_track_changes': False,
             'user_timezone': pytz.utc,
             'user_language': 'en'
         }
@@ -348,7 +348,7 @@ class TestPeerAssessmentRender(XBlockHandlerTestCase):
             'review_num': 1,
             'allow_latex': False,
             'prompts_type': 'text',
-            'track_changes': '',
+            'enable_track_changes': False,
             'user_timezone': pytz.utc,
             'user_language': 'en'
         }
@@ -370,7 +370,7 @@ class TestPeerAssessmentRender(XBlockHandlerTestCase):
             'submit_button_text': 'submit your assessment & move to response #2',
             'allow_latex': False,
             'prompts_type': 'text',
-            'track_changes': '',
+            'enable_track_changes': False,
             'user_timezone': pytz.utc,
             'user_language': 'en'
         }
@@ -413,7 +413,7 @@ class TestPeerAssessmentRender(XBlockHandlerTestCase):
             'submit_button_text': 'submit your assessment & move to response #2',
             'allow_latex': False,
             'prompts_type': 'text',
-            'track_changes': '',
+            'enable_track_changes': False,
             'user_timezone': pytz.utc,
             'user_language': 'en'
         }
@@ -436,7 +436,7 @@ class TestPeerAssessmentRender(XBlockHandlerTestCase):
             'submit_button_text': 'submit your assessment & move to response #2',
             'allow_latex': False,
             'prompts_type': 'text',
-            'track_changes': '',
+            'enable_track_changes': False,
             'user_timezone': pytz.utc,
             'user_language': 'en'
         }
@@ -463,7 +463,7 @@ class TestPeerAssessmentRender(XBlockHandlerTestCase):
             'submit_button_text': 'submit your assessment & move to response #2',
             'allow_latex': False,
             'prompts_type': 'text',
-            'track_changes': '',
+            'enable_track_changes': False,
             'user_timezone': pytz.utc,
             'user_language': 'en'
         }
@@ -502,7 +502,7 @@ class TestPeerAssessmentRender(XBlockHandlerTestCase):
             'submit_button_text': 'submit your assessment & move to response #2',
             'allow_latex': False,
             'prompts_type': 'text',
-            'track_changes': '',
+            'enable_track_changes': False,
             'user_timezone': pytz.utc,
             'user_language': 'en'
         }
@@ -533,7 +533,7 @@ class TestPeerAssessmentRender(XBlockHandlerTestCase):
             'review_num': 1,
             'allow_latex': False,
             'prompts_type': 'text',
-            'track_changes': '',
+            'enable_track_changes': False,
             'user_timezone': pytz.utc,
             'user_language': 'en'
         }
@@ -569,7 +569,7 @@ class TestPeerAssessmentRender(XBlockHandlerTestCase):
             'submit_button_text': 'Submit your assessment & review another response',
             'allow_latex': False,
             'prompts_type': 'text',
-            'track_changes': '',
+            'enable_track_changes': False,
             'user_timezone': pytz.utc,
             'user_language': 'en'
         }
@@ -603,7 +603,7 @@ class TestPeerAssessmentRender(XBlockHandlerTestCase):
             'submit_button_text': 'Submit your assessment & review another response',
             'allow_latex': False,
             'prompts_type': 'text',
-            'track_changes': '',
+            'enable_track_changes': False,
             'user_timezone': pytz.utc,
             'user_language': 'en'
         }
@@ -628,7 +628,7 @@ class TestPeerAssessmentRender(XBlockHandlerTestCase):
             'submit_button_text': 'Submit your assessment & review another response',
             'allow_latex': False,
             'prompts_type': 'text',
-            'track_changes': '',
+            'enable_track_changes': False,
             'user_timezone': pytz.utc,
             'user_language': 'en'
         }

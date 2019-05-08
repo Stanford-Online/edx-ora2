@@ -106,7 +106,7 @@ describe("OpenAssessment.StudioView", function() {
                 due: "2014-01-03T00:00",
                 must_grade: 5,
                 must_be_graded_by: 3,
-                track_changes: ""
+                enable_track_changes: false
             },
             {
                 name: "self-assessment",

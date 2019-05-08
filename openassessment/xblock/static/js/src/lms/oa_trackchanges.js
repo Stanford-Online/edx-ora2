@@ -80,8 +80,6 @@
     };
 
     TrackChangesView.prototype.displayTrackChanges = function displayTrackChanges() {
-        var require = require || RequireJS.require;
-        var StringUtils = RequireJS.require('edx-ui-toolkit/js/utils/string-utils');
         var view = this;
         var $ = window.jQuery;
         var editedResponse = $('.submission__answer__part__text__value.edited.part1', view.element);
@@ -92,11 +90,7 @@
         $('<span>' + gettext('Showing response with:') + ' </span>').insertBefore(peerEditSelect);
         $(editedResponse).each(function() {
             var peerNumber = $(this).data('peer-num');
-            var optionText = StringUtils.interpolate(
-                gettext("Peer {peerNumber}'s Edits"),
-                {peerNumber: peerNumber}
-            )
-            $('<option value="peer' + peerNumber + '">' + optionText + '</option>')
+            $('<option value="peer' + peerNumber + '">Peer ' + peerNumber + "'s Edits</option>")
                 .appendTo(peerEditSelect);
         });
         var responseHeaders = $('[id^=openassessment__grade__] .submission__answer__response__title');

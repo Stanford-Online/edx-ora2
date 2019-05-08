@@ -70,7 +70,7 @@ class WorkflowMixin(object):
             requirements["peer"] = {
                 "must_grade": peer_assessment_module["must_grade"],
                 "must_be_graded_by": peer_assessment_module["must_be_graded_by"],
-                "track_changes": peer_assessment_module.get("track_changes", ""),
+                "enable_track_changes": peer_assessment_module.get("enable_track_changes", False),
             }
 
         training_module = self.get_assessment_module('student-training')

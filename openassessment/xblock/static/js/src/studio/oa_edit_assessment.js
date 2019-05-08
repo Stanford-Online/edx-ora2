@@ -19,9 +19,6 @@ OpenAssessment.EditPeerAssessmentView = function(element) {
         $("#peer_assessment_graded_by", this.element),
         {min: 0, max: 99}
     );
-    this.trackChangesField = new OpenAssessment.Fields.stringField(
-        $("#peer_assessment_track_changes", this.element)
-    );
 
     // Configure the toggle checkbox to enable/disable this assessment
     new OpenAssessment.ToggleControl(
@@ -68,7 +65,7 @@ OpenAssessment.EditPeerAssessmentView.prototype = {
         return {
             must_grade: this.mustGradeNum(),
             must_be_graded_by: this.mustBeGradedByNum(),
-            track_changes: this.trackChanges(),
+            enable_track_changes: this.trackChangesEnabled(),
             start: this.startDatetime(),
             due: this.dueDatetime()
         };
@@ -124,9 +121,16 @@ OpenAssessment.EditPeerAssessmentView.prototype = {
         return this.mustBeGradedByField.get();
     },
 
-    trackChanges: function(text) {
+    trackChangesEnabled: function(isEnabled) {
         var sel = $("#peer_assessment_track_changes", this.element);
-        return OpenAssessment.Fields.stringField(sel, text);
+        if (isEnabled !== undefined) {
+            if (isEnabled) {
+                sel.val(1);
+            } else {
+                sel.val(0);
+            }
+        }
+        return sel.val() === "1";
     },
 
     /**

@@ -92,7 +92,7 @@
             name="peer-assessment"
             must_grade="5"
             must_be_graded_by="3"
-            track_changes="http://example.org/track_changes.js"
+            enable_track_changes="true"
         />
         <assessment name="self-assessment" />
     </assessments>
