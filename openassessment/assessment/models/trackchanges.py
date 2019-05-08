@@ -18,7 +18,6 @@ class TrackChanges(models.Model):
     # A (owner_submission_uuid, scorer_id) pair uniquely specifies a piece of edited content
     owner_submission_uuid = models.UUIDField(db_index=True, default=uuid4)
     scorer_id = models.CharField(max_length=40, db_index=True)
-    edited_content = models.TextField(blank=True)
     # edited content allowing multiple prompts (JSON-serialized)
     json_edited_content = models.TextField(blank=True)
 
@@ -30,7 +29,6 @@ class TrackChanges(models.Model):
         return {
             "owner_submission_uuid": self.owner_submission_uuid,
             "scorer_id": self.scorer_id,
-            "edited_content": self.edited_content,
             "json_edited_content": self.json_edited_content,
             "id": self.id,
         }

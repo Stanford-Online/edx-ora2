@@ -284,7 +284,6 @@ def create_assessment(
             change_tracker = TrackChanges(
                 scorer_id=scorer_id,
                 owner_submission_uuid=peer_submission_uuid,
-                edited_content=track_changes_edits,
                 json_edited_content=json_edited_content,
             )
             change_tracker.save()

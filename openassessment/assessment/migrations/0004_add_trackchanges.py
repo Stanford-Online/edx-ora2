@@ -18,7 +18,6 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('owner_submission_uuid', models.UUIDField(db_index=True, default=uuid.uuid4)),
                 ('scorer_id', models.CharField(db_index=True, max_length=40)),
-                ('edited_content', models.TextField(blank=True)),
                 ('json_edited_content', models.TextField(blank=True)),
             ],
         ),
