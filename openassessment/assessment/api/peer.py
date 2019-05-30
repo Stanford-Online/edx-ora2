@@ -280,7 +280,6 @@ def create_assessment(
 
         if track_changes_edits:
             json_edited_content = serialize_edited_content(track_changes_edits)
-
             change_tracker = TrackChanges(
                 scorer_id=scorer_id,
                 owner_submission_uuid=peer_submission_uuid,
@@ -957,7 +956,8 @@ def on_cancel(submission_uuid):
 
 
 def serialize_edited_content(track_changes_edits):
-    """Serialize submission content with track changes.
+    """
+    Serialize submission content with track changes.
 
     Required now that multiple prompts are possible.
 
@@ -967,10 +967,11 @@ def serialize_edited_content(track_changes_edits):
     Returns:
         json representation of content of assessment for each prompt with track changes.
     """
-
-    edited_content_array = []
-    for edited_content in track_changes_edits:
-        content_dict = {'text': edited_content}
-        edited_content_array.append(content_dict)
-
-    return json.dumps({'parts': edited_content_array})
+    parts = [
+        {
+            'text': edited_content,
+        }
+        for edited_content in track_changes_edits
+    ]
+    content = json.dumps({'parts': parts})
+    return content

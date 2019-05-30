@@ -14,7 +14,9 @@ logger = logging.getLogger(__name__)
 
 
 class TrackChanges(models.Model):
-    """Store copies of student submission texts with inline editing marks."""
+    """
+    Store copies of student submission texts with inline editing marks
+    """
     # A (owner_submission_uuid, scorer_id) pair uniquely specifies a piece of edited content
     owner_submission_uuid = models.UUIDField(db_index=True, default=uuid4)
     scorer_id = models.CharField(max_length=40, db_index=True)
@@ -22,15 +24,15 @@ class TrackChanges(models.Model):
     json_edited_content = models.TextField(blank=True)
 
     class Meta:
-        app_label = "assessment"
+        app_label = 'assessment'
         unique_together = ('owner_submission_uuid', 'scorer_id')
 
     def as_dict(self):
         return {
-            "owner_submission_uuid": self.owner_submission_uuid,
-            "scorer_id": self.scorer_id,
-            "json_edited_content": self.json_edited_content,
-            "id": self.id,
+            'owner_submission_uuid': self.owner_submission_uuid,
+            'scorer_id': self.scorer_id,
+            'json_edited_content': self.json_edited_content,
+            'id': self.id,
         }
 
     def __str__(self):
