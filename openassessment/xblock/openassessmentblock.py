@@ -186,7 +186,7 @@ class OpenAssessmentBlock(MessageMixin,
     enable_track_changes = Boolean(
         default=False,
         scope=Scope.settings,
-        help="Enables peer assessment editing using the ICE library"
+        help="Enable peer assessment editing with review"
     )
 
     rubric_criteria = List(

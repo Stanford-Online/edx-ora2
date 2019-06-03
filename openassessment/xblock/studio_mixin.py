@@ -227,11 +227,11 @@ class StudioMixin(object):
         if not success:
             return {'success': False, 'msg': self._('Validation error: {error}').format(error=msg)}
 
-        # Calculate track_changes URL
-        enable_track_changes = False
-        for assessment in data['assessments']:
-            if assessment['name'] == 'peer-assessment':
-                enable_track_changes = assessment.get('enable_track_changes', False)
+        enable_track_changes = any([
+            assessment.get('enable_track_changes', False)
+            for assessment in data['assessments']
+            if assessment['name'] == 'peer-assessment'
+        ])
 
         # At this point, all the input data has been validated,
         # so we can safely modify the XBlock fields.
