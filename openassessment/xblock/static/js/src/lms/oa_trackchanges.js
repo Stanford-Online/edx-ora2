@@ -30,19 +30,18 @@
         var tracker;
         var $ = window.jQuery;
         var ice = window.ice;
-        var element;
-        var elements = document.querySelectorAll('[id^=track-changes-content_]');
+        var trackChangesElement;
+        var trackChangesSelector = $('[id^=track-changes-content_]', this.element);
         var trackers = [];
 
-        if (!elements) {
+        if (trackChangesSelector.length == 0) {
             return;
         }
-
-        for (var index = 0; index < elements.length; index++) {
-            element = elements[index];
+        for (var index = 0; index < trackChangesSelector.length; index++) {
+            trackChangesElement = trackChangesSelector.get(index);
 
             tracker = new ice.InlineChangeEditor({
-                element: element,
+                element: trackChangesElement,
                 handleEvents: true,
                 currentUser: {id: 1, name: 'Reviewer'},
                 plugins: [
@@ -59,16 +58,14 @@
             tracker.startTracking();
             trackers.push(tracker);
 
-            $('#track_changes_clear_button_' + index).click({trackers: trackers}, clearChangesHandler);
+            $('#track_changes_clear_button_' + index, this.element).click({trackers: trackers}, clearChangesHandler);
         }
     };
 
     TrackChangesView.prototype.getEditedContent = function getEditedContent() {
         var $ = window.jQuery;
-        var changeTracking = $('[id^=openassessment__peer-assessment__]');
         var editedContents = [];
-        var trackChangesContent = $('[id^=track-changes-content_]', changeTracking);
-
+        var trackChangesContent = $('[id^=track-changes-content_]', this.element);
         if (trackChangesContent.size() > 0) {
             for (var index = 0; index < trackChangesContent.length; index++) {
                 var editedContentHtml = trackChangesContent.get(index).innerHTML;

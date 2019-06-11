@@ -112,7 +112,7 @@ OpenAssessment.PeerView.prototype = {
     installHandlers: function(isContinuedAssessment) {
         var sel = $('.step--peer-assessment', this.element);
         var view = this;
-        this.trackChangesContent = [];
+        this.trackChangesEnabled = false;
 
         // Install a click handler for collapse/expand
         this.baseView.setUpCollapseExpand(sel);
@@ -134,11 +134,7 @@ OpenAssessment.PeerView.prototype = {
         // Initialize track changes
         var trackChangesSelector = $('[id^=track-changes-content_]', this.element);
         if (trackChangesSelector.size() > 0) {
-            for (var index = 0; index < trackChangesSelector.length; index++) {
-                var trackChangesElement = trackChangesSelector.get(index);
-                this.trackChangesView = new OpenAssessment.TrackChangesView(trackChangesElement);
-                this.trackChangesContent.push(this.trackChangesView);
-            }
+            this.trackChangesEnabled = true;
             view.baseView.enableTrackChangesView();
         }
 
@@ -252,7 +248,7 @@ OpenAssessment.PeerView.prototype = {
         var view = this;
         var uuid = this.getUUID();
         var editedContent = '';
-        if (this.trackChangesContent) {
+        if (this.trackChangesEnabled) {
             editedContent = this.trackChangesView.getEditedContent();
         }
 
