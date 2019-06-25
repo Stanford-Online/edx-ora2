@@ -79,17 +79,16 @@
     TrackChangesView.prototype.displayTrackChanges = function displayTrackChanges() {
         var view = this;
         var $ = window.jQuery;
-        var editedResponse = $('.submission__answer__part__text__value.edited.part1', view.element);
-        var gradeContent = $('[id^=openassessment__grade__] .submission__answer__display__content');
+        var numPeerEdits = $('.submission__answer__part__text__value.edited').filter(':last').data('peer-num');
+        var gradeContent = $('[id^=openassessment__grade__] .submission__answer__display__content', view.element);
         var peerEditSelect = $('<select><option value="original">' + gettext('Your Unedited Submission') + '</option></select>')
             .insertBefore(gradeContent)
             .wrap("<div class='submission__answer__display__content__peeredit__select'>");
         $('<span>' + gettext('Showing response with:') + ' </span>').insertBefore(peerEditSelect);
-        $(editedResponse).each(function() {
-            var peerNumber = $(this).data('peer-num');
+        for (var peerNumber = 1; peerNumber <= numPeerEdits; peerNumber++) {
             $('<option value="peer' + peerNumber + '">Peer ' + peerNumber + "'s Edits</option>")
                 .appendTo(peerEditSelect);
-        });
+        }
         var responseHeaders = $('[id^=openassessment__grade__] .submission__answer__response__title');
         var originalAnswerLabel = responseHeaders.first().text();
         $(peerEditSelect).change(function() {

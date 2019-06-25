@@ -275,8 +275,8 @@ def add_trackchanges_to_submission_dict(submission, peer_assessments):
         prompt_array = zip(*prompt_array)
 
         # Add track change edits for each part to the appropriate part in the submission dict.
-        if submission is not None and len(submission['answer']['parts']) == len(prompt_array):
-            for index in range(len(submission['answer']['parts'])):
-                submission['answer']['parts'][index]['track_changes'] = prompt_array[index]
+        for index in range(len(submission['answer']['parts'])):
+            if submission['answer']['parts'][index]['text']:
+                submission['answer']['parts'][index]['track_changes'] = prompt_array.pop(0)
 
     return submission
