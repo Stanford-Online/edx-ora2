@@ -23,8 +23,6 @@ update-npm-requirements:
 	npm update --silent
 	cp ./node_modules/backgrid/lib/backgrid*.js $(STATIC_JS)/lib/backgrid/
 	cp ./node_modules/backgrid/lib/backgrid*.css $(STATIC_CSS)/lib/backgrid/
-	sed -i 's/\["underscore"/"backgrid", &/' $(STATIC_JS)/lib/backgrid/backgrid.js
-	sed -i 's/\["underscore"/"backgrid",&/' $(STATIC_JS)/lib/backgrid/backgrid.min.js
 
 javascript: update-npm-requirements
 	node_modules/.bin/uglifyjs $(STATIC_JS)/src/oa_shared.js $(STATIC_JS)/src/*.js $(STATIC_JS)/src/lms/*.js $(STATIC_JS)/lib/backgrid/backgrid.min.js -c warnings=false > "$(STATIC_JS)/openassessment-lms.min.js"
