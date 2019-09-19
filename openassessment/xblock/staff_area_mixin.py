@@ -7,25 +7,13 @@ from functools import wraps
 import logging
 
 from xblock.core import XBlock
-from openassessment.assessment.errors import (
-    PeerAssessmentInternalError,
-)
-from openassessment.workflow.errors import (
-    AssessmentWorkflowError, AssessmentWorkflowInternalError
-)
-from openassessment.assessment.errors.ai import AIError
-from openassessment.xblock.resolve_dates import DISTANT_PAST, DISTANT_FUTURE
-from openassessment.xblock.data_conversion import (
-    create_rubric_dict, convert_training_examples_list_to_dict, create_submission_dict
-)
-from submissions import api as submission_api
-from openassessment.assessment.api import peer as peer_api
-from openassessment.assessment.api import self as self_api
-from openassessment.assessment.api import ai as ai_api
-from openassessment.workflow import api as workflow_api
-from openassessment.assessment.api import staff as staff_api
-from .user_data import get_user_preferences
 
+from openassessment.assessment.errors import PeerAssessmentInternalError
+from openassessment.workflow.errors import AssessmentWorkflowError, AssessmentWorkflowInternalError
+from openassessment.xblock.data_conversion import create_submission_dict
+from openassessment.xblock.resolve_dates import DISTANT_FUTURE, DISTANT_PAST
+
+from .user_data import get_user_preferences
 
 logger = logging.getLogger(__name__)
 
@@ -127,33 +115,13 @@ class StaffAreaMixin(object):
         context['status_counts'] = status_counts
         context['num_submissions'] = num_submissions
 
-        # Show the schedule training button if example based assessment is
-        # configured, and the current user has admin privileges.
-        example_based_assessment = self.get_assessment_module('example-based-assessment')
-        display_ai_staff_info = (
-            self.is_admin and
-            bool(example_based_assessment) and
-            not self.in_studio_preview
-        )
-        context['display_schedule_training'] = display_ai_staff_info
-        context['display_reschedule_unfinished_tasks'] = display_ai_staff_info
-        if display_ai_staff_info:
-            context['classifierset'] = ai_api.get_classifier_set_info(
-                create_rubric_dict(self.prompts, self.rubric_criteria_with_labels),
-                example_based_assessment['algorithm_id'],
-                student_item['course_id'],
-                student_item['item_id']
-            )
-
         # Include Latex setting
         context['allow_latex'] = self.allow_latex
+        context['prompts_type'] = self.prompts_type
 
         # Include release/due dates for each step in the problem
         context['step_dates'] = list()
         for step in ['submission'] + self.assessment_steps:
-
-            if step == 'example-based-assessment':
-                continue
 
             # Get the dates as a student would see them
             __, __, start_date, due_date = self.is_closed(step=step, course_staff=False)
@@ -180,48 +148,14 @@ class StaffAreaMixin(object):
         """
         Returns a context with staff assessment "ungraded" and "in-progress" counts.
         """
+        # Import is placed here to avoid model import at project startup.
+        from openassessment.assessment.api import staff as staff_api
         grading_stats = staff_api.get_staff_grading_statistics(course_id, item_id)
 
         return {
             'staff_assessment_ungraded': grading_stats['ungraded'],
             'staff_assessment_in_progress': grading_stats['in-progress']
         }
-
-    @XBlock.json_handler
-    @require_global_admin("SCHEDULE_TRAINING")
-    def schedule_training(self, data, suffix=''):  # pylint: disable=W0613
-        """
-        Schedule a new training task for example-based grading.
-        """
-        assessment = self.get_assessment_module('example-based-assessment')
-        student_item_dict = self.get_student_item_dict()
-
-        if assessment:
-            examples = assessment["examples"]
-            try:
-                workflow_uuid = ai_api.train_classifiers(
-                    create_rubric_dict(self.prompts, self.rubric_criteria_with_labels),
-                    convert_training_examples_list_to_dict(examples),
-                    student_item_dict.get('course_id'),
-                    student_item_dict.get('item_id'),
-                    assessment["algorithm_id"]
-                )
-                return {
-                    'success': True,
-                    'workflow_uuid': workflow_uuid,
-                    'msg': self._(u"Training scheduled with new Workflow UUID: {uuid}".format(uuid=workflow_uuid))
-                }
-            except AIError as err:
-                return {
-                    'success': False,
-                    'msg': self._(u"An error occurred scheduling classifier training: {error}".format(error=err))
-                }
-
-        else:
-            return {
-                'success': False,
-                'msg': self._(u"Example Based Assessment is not configured for this location.")
-            }
 
     @XBlock.handler
     @require_course_staff("STUDENT_INFO")
@@ -251,6 +185,9 @@ class StaffAreaMixin(object):
 
         Must be course staff to render this view.
         """
+        # Import is placed here to avoid model import at project startup.
+        from openassessment.assessment.api import staff as staff_api
+        from submissions import api as submission_api
         try:
             student_item_dict = self.get_student_item_dict()
             course_id = student_item_dict.get('course_id')
@@ -326,7 +263,8 @@ class StaffAreaMixin(object):
             'rubric_criteria': copy.deepcopy(self.rubric_criteria_with_labels),
             'student_username': student_username,
             'user_timezone': user_preferences['user_timezone'],
-            'user_language': user_preferences['user_language']
+            'user_language': user_preferences['user_language'],
+            "prompts_type": self.prompts_type,
         }
 
         if submission:
@@ -350,6 +288,9 @@ class StaffAreaMixin(object):
         Args:
             student_username (unicode): The username of the student to report.
         """
+        # Import is placed here to avoid model import at project startup.
+        from submissions import api as submission_api
+
         anonymous_user_id = None
         student_item = None
         submissions = None
@@ -387,10 +328,12 @@ class StaffAreaMixin(object):
             submission_uuid (unicode): The uuid of the submission, should NOT be None.
             context: the context to update with additional information
         """
-        assessment_steps = self.assessment_steps
+        # Import is placed here to avoid model import at project startup.
+        from openassessment.assessment.api import peer as peer_api
+        from openassessment.assessment.api import self as self_api
+        from openassessment.assessment.api import staff as staff_api
 
-        example_based_assessment = None
-        example_based_assessment_grade_context = None
+        assessment_steps = self.assessment_steps
 
         self_assessment = None
         self_assessment_grade_context = None
@@ -423,11 +366,6 @@ class StaffAreaMixin(object):
             if grade_exists:
                 self_assessment_grade_context = self._assessment_grade_context(self_assessment)
 
-        if "example-based-assessment" in assessment_steps:
-            example_based_assessment = ai_api.get_latest_assessment(submission_uuid)
-            if grade_exists:
-                example_based_assessment_grade_context = self._assessment_grade_context(example_based_assessment)
-
         if grade_exists:
             if staff_assessment:
                 staff_assessment_grade_context = self._assessment_grade_context(staff_assessment)
@@ -436,7 +374,6 @@ class StaffAreaMixin(object):
                 submission_uuid,
                 peer_assessments_grade_context,
                 self_assessment_grade_context,
-                example_based_assessment_grade_context,
                 staff_assessment_grade_context,
                 is_staff=True,
             )
@@ -444,7 +381,6 @@ class StaffAreaMixin(object):
         workflow_cancellation = self.get_workflow_cancellation_info(submission_uuid)
 
         context.update({
-            'example_based_assessment': [example_based_assessment] if example_based_assessment else None,
             'self_assessment': [self_assessment] if self_assessment else None,
             'peer_assessments': peer_assessments,
             'staff_assessment': [staff_assessment] if staff_assessment else None,
@@ -455,49 +391,10 @@ class StaffAreaMixin(object):
             'workflow_cancellation': workflow_cancellation,
         })
 
-        if peer_assessments or self_assessment or example_based_assessment or staff_assessment:
+        if peer_assessments or self_assessment or staff_assessment:
             max_scores = peer_api.get_rubric_max_scores(submission_uuid)
             for criterion in context["rubric_criteria"]:
                 criterion["total_value"] = max_scores[criterion["name"]]
-
-    @XBlock.json_handler
-    @require_global_admin("RESCHEDULE_TASKS")
-    def reschedule_unfinished_tasks(self, data, suffix=''):  # pylint: disable=W0613
-        """
-        Wrapper which invokes the API call for rescheduling grading tasks.
-
-        Checks that the requester is an administrator that is not in studio-preview mode,
-        and that the api-call returns without error.  If it returns with an error, (any
-        exception), the appropriate JSON serializable dictionary with success conditions
-        is passed back.
-
-        Args:
-            data (not used)
-            suffix (not used)
-
-        Return:
-            Json serilaizable dict with the following elements:
-                'success': (bool) Indicates whether or not the tasks were rescheduled successfully
-                'msg': The response to the server (could be error message or success message)
-        """
-        # Identifies the course and item that will need to be re-run
-        student_item_dict = self.get_student_item_dict()
-        course_id = student_item_dict.get('course_id')
-        item_id = student_item_dict.get('item_id')
-
-        try:
-            # Note that we only want to recschdule grading tasks, but maintain the potential functionallity
-            # within the API to also reschedule training tasks.
-            ai_api.reschedule_unfinished_tasks(course_id=course_id, item_id=item_id, task_type=u"grade")
-            return {
-                'success': True,
-                'msg': self._(u"All AI tasks associated with this item have been rescheduled successfully.")
-            }
-        except AIError as ex:
-            return {
-                'success': False,
-                'msg': self._(u"An error occurred while rescheduling tasks: {}".format(ex))
-            }
 
     def clear_student_state(self, user_id, course_id, item_id, requesting_user_id):
         """
@@ -505,6 +402,8 @@ class StaffAreaMixin(object):
         for a given problem. It will cancel the workflow using traditional methods to remove it from the grading pools,
         and pass through to the submissions API to orphan the submission so that the user can create a new one.
         """
+        # Import is placed here to avoid model import at project startup.
+        from submissions import api as submission_api
         # Note that student_item cannot be constructed using get_student_item_dict, since we're in a staff context
         student_item = {
             'course_id': course_id,
@@ -560,6 +459,8 @@ class StaffAreaMixin(object):
 
         If requesting_user is not provided, we will use the user to which this xblock is currently bound.
         """
+        # Import is placed here to avoid model import at project startup.
+        from openassessment.workflow import api as workflow_api
         try:
             assessment_requirements = self.workflow_requirements()
             if requesting_user_id is None:

@@ -5,7 +5,6 @@ Message step in the OpenAssessment XBlock.
 import datetime as dt
 
 import pytz
-
 from xblock.core import XBlock
 
 
@@ -19,7 +18,7 @@ class MessageMixin(object):
     """
 
     @XBlock.handler
-    def render_message(self, data, suffix=''):
+    def render_message(self, data, suffix=''):  # pylint: disable=unused-argument
         """
         Render the message step.
 

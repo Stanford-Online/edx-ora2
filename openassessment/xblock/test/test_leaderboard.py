@@ -8,15 +8,17 @@ from urlparse import urlparse
 
 import boto
 from boto.s3.key import Key
-from django.test.utils import override_settings
-from django.core.cache import cache
 import mock
 from moto import mock_s3
 
-from submissions import api as sub_api
-from .base import XBlockHandlerTransactionTestCase, scenario
+from django.core.cache import cache
+from django.test.utils import override_settings
+
 from openassessment.fileupload import api
 from openassessment.xblock.data_conversion import create_submission_dict, prepare_submission_for_serialization
+from submissions import api as sub_api
+
+from .base import XBlockHandlerTransactionTestCase, scenario
 
 
 class TestLeaderboardRender(XBlockHandlerTransactionTestCase):
@@ -148,6 +150,7 @@ class TestLeaderboardRender(XBlockHandlerTransactionTestCase):
         conn = boto.connect_s3()
         bucket = conn.create_bucket('mybucket')
         # Create a non-text submission (the submission dict doesn't contain 'text')
+        file_download_url = api.get_download_url('s3key')
         self._create_submissions_and_scores(xblock, [('s3key', 1)], submission_key='file_key')
 
         # Expect that we default to an empty string for content
@@ -287,6 +290,7 @@ class TestLeaderboardRender(XBlockHandlerTransactionTestCase):
             {
                 'topscores': scores,
                 'allow_latex': xblock.allow_latex,
+                'prompts_type': xblock.prompts_type,
                 'file_upload_type': xblock.file_upload_type,
                 'xblock_id': xblock.scope_ids.usage_id
             },
@@ -356,4 +360,3 @@ class TestLeaderboardRender(XBlockHandlerTransactionTestCase):
                     (_clean_query_string(file_info[0]), file_info[1]) for file_info in score['files']
                 ]
         return scores
-

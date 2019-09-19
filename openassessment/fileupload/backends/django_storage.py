@@ -1,9 +1,10 @@
 import os
-from .base import BaseBackend
 
-from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
 from django.core.urlresolvers import reverse
+
+from .base import BaseBackend
 
 
 class Backend(BaseBackend):

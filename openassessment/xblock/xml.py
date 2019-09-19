@@ -4,16 +4,19 @@ Serialize and deserialize OpenAssessment XBlock content to/from XML.
 
 from uuid import uuid4 as uuid
 import logging
-import lxml.etree as etree
-import pytz
+import json
+
 import dateutil.parser
 import defusedxml.ElementTree as safe_etree
-from data_conversion import update_assessments_format
-from defaults import DEFAULT_RUBRIC_FEEDBACK_TEXT
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.validators import URLValidator
+import lxml.etree as etree
+import pytz
 
-logger = logging.getLogger(__name__)
+from openassessment.xblock.data_conversion import update_assessments_format
+from openassessment.xblock.lms_mixin import GroupAccessDict
+
+log = logging.getLogger(__name__)
 
 
 class UpdateFromXmlError(Exception):
@@ -537,10 +540,6 @@ def parse_assessments_xml(assessments_root):
         # Assessment start
         if 'start' in assessment.attrib:
 
-            # Example-based assessment is NOT allowed to have a start date
-            if assessment_dict['name'] == 'example-based-assessment':
-                raise UpdateFromXmlError('Example-based assessment cannot have a start date')
-
             # Other assessment types CAN have a start date
             parsed_start = parse_date(assessment.get('start'), name="{} start date".format(assessment_dict['name']))
 
@@ -551,10 +550,6 @@ def parse_assessments_xml(assessments_root):
 
         # Assessment due
         if 'due' in assessment.attrib:
-
-            # Example-based assessment is NOT allowed to have a due date
-            if assessment_dict['name'] == 'example-based-assessment':
-                raise UpdateFromXmlError('Example-based assessment cannot have a due date')
 
             # Other assessment types CAN have a due date
             parsed_due = parse_date(assessment.get('due'), name="{} due date".format(assessment_dict['name']))
@@ -604,13 +599,9 @@ def parse_assessments_xml(assessments_root):
         # Student training and AI Grading should always have examples set, even if it's an empty list.
         # (Validation rules, applied later, are responsible for
         # ensuring that users specify at least one example).
-        # All assessments except for Student Training and AI (example-based-assessment) types ignore examples.
+        # All assessments except for Student Training ignore examples.
         if assessment_dict['name'] == 'student-training':
             assessment_dict['examples'] = parse_examples_xml(examples)
-
-        if assessment_dict['name'] == 'example-based-assessment':
-            assessment_dict['examples'] = parse_examples_xml(examples)
-            assessment_dict['algorithm_id'] = unicode(assessment.get('algorithm_id', 'ease'))
 
         # Update the list of assessments
         assessments_list.append(assessment_dict)
@@ -635,9 +626,21 @@ def serialize_training_examples(examples, assessment_el):
 
         # Answer provided in the example (default to empty string)
         answer_el = etree.SubElement(example_el, 'answer')
-        for part in example_dict.get('answer', {}).get('parts', []):
-            part_el = etree.SubElement(answer_el, 'part')
-            part_el.text = unicode(part.get('text', u''))
+        try:
+            answer = example_dict.get('answer')
+            if answer is None:
+                parts = []
+            elif isinstance(answer, dict):
+                parts = answer.get('parts', [])
+            elif isinstance(answer, list):
+                parts = answer
+
+            for part in parts:
+                part_el = etree.SubElement(answer_el, 'part')
+                part_el.text = unicode(part.get('text', u''))
+        except: # excuse the bare-except, looking for more information on EDUCATOR-1817
+            log.exception('Error parsing training example: %s', example_dict)
+            raise
 
         # Options selected from the rubric
         options_selected = example_dict.get('options_selected', [])
@@ -678,9 +681,6 @@ def serialize_assessments(assessments_root, oa_block):
 
         if assessment_dict.get('due') is not None:
             assessment.set('due', unicode(assessment_dict['due']))
-
-        if assessment_dict.get('algorithm_id') is not None:
-            assessment.set('algorithm_id', unicode(assessment_dict['algorithm_id']))
 
         if assessment_dict.get('required') is not None:
             assessment.set('required', unicode(assessment_dict['required']))
@@ -740,6 +740,10 @@ def serialize_content_to_xml(oa_block, root):
     if oa_block.allow_latex is not None:
         root.set('allow_latex', unicode(oa_block.allow_latex))
 
+    # Set group access setting if not empty
+    if oa_block.group_access:
+        root.set('group_access', json.dumps(GroupAccessDict().to_json(oa_block.group_access)))
+
     # Open assessment displayed title
     title = etree.SubElement(root, 'title')
     title.text = unicode(oa_block.title)
@@ -751,6 +755,8 @@ def serialize_content_to_xml(oa_block, root):
     # Prompts
     prompts_root = etree.SubElement(root, 'prompts')
     _serialize_prompts(prompts_root, oa_block.prompts)
+
+    root.set('prompts_type', unicode(oa_block.prompts_type))
 
     # Rubric
     rubric_root = etree.SubElement(root, 'rubric')
@@ -886,6 +892,10 @@ def parse_from_xml(root):
     if 'allow_latex' in root.attrib:
         allow_latex = _parse_boolean(unicode(root.attrib['allow_latex']))
 
+    group_access = {}
+    if 'group_access' in root.attrib:
+        group_access = GroupAccessDict().from_json(json.loads(root.attrib['group_access']))
+
     # Retrieve the title
     title_el = root.find('title')
     if title_el is None:
@@ -902,6 +912,10 @@ def parse_from_xml(root):
 
     # Retrieve the prompts
     prompts = _parse_prompts_xml(root)
+
+    prompts_type = 'text'
+    if 'prompts_type' in root.attrib:
+        prompts_type = unicode(root.attrib['prompts_type'])
 
     # Retrieve the leaderboard if it exists, otherwise set it to 0
     leaderboard_show = 0
@@ -921,6 +935,7 @@ def parse_from_xml(root):
     return {
         'title': title,
         'prompts': prompts,
+        'prompts_type': prompts_type,
         'rubric_criteria': rubric['criteria'],
         'rubric_assessments': assessments,
         'rubric_feedback_prompt': rubric['feedbackprompt'],
@@ -933,6 +948,7 @@ def parse_from_xml(root):
         'file_upload_type': file_upload_type,
         'white_listed_file_types': white_listed_file_types,
         'allow_latex': allow_latex,
+        'group_access': group_access,
         'leaderboard_show': leaderboard_show
     }
 

@@ -3,15 +3,19 @@
 Tests for the student training step in the Open Assessment XBlock.
 """
 import datetime
-import ddt
 import json
 import pprint
+
+import ddt
 from mock import Mock, patch
 import pytz
+
 from django.db import DatabaseError
+
 from openassessment.assessment.models import StudentTrainingWorkflow
 from openassessment.workflow import api as workflow_api
 from openassessment.workflow.errors import AssessmentWorkflowError
+
 from .base import XBlockHandlerTestCase, scenario
 
 
@@ -186,6 +190,7 @@ class StudentTrainingAssessTest(StudentTrainingTest):
         self.assertFalse(resp['corrections'])
         expected_context = {
             "allow_latex": False,
+            'prompts_type': 'text',
             'user_timezone': None,
             'user_language': None
         }
@@ -325,6 +330,7 @@ class StudentTrainingRenderTest(StudentTrainingTest):
         expected_context = {
             'training_due': "2000-01-01T00:00:00+00:00",
             'allow_latex': False,
+            'prompts_type': 'text',
             'user_timezone': None,
             'user_language': None
         }
@@ -340,6 +346,7 @@ class StudentTrainingRenderTest(StudentTrainingTest):
         expected_template = "openassessmentblock/student_training/student_training_cancelled.html"
         expected_context = {
             'allow_latex': False,
+            'prompts_type': 'text',
             'user_timezone': None,
             'user_language': None
         }
@@ -360,6 +367,7 @@ class StudentTrainingRenderTest(StudentTrainingTest):
         expected_context = {
             'training_start': datetime.datetime(3000, 1, 1).replace(tzinfo=pytz.utc),
             'allow_latex': False,
+            'prompts_type': 'text',
             'user_timezone': None,
             'user_language': None
         }

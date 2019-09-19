@@ -3,22 +3,23 @@
 Test submission to the OpenAssessment XBlock.
 """
 
-import json
 import datetime as dt
+import json
+
 import boto
 from boto.s3.key import Key
-from django.test.utils import override_settings
-from mock import patch, Mock
+from mock import Mock, patch
 from moto import mock_s3
 import pytz
 
-from submissions import api as sub_api
-from submissions.api import SubmissionRequestError, SubmissionInternalError
-from openassessment.fileupload import api
+from django.test.utils import override_settings
 
+from openassessment.fileupload import api
 from openassessment.workflow import api as workflow_api
-from openassessment.xblock.openassessmentblock import OpenAssessmentBlock
 from openassessment.xblock.data_conversion import create_submission_dict, prepare_submission_for_serialization
+from openassessment.xblock.openassessmentblock import OpenAssessmentBlock
+from submissions import api as sub_api
+from submissions.api import SubmissionInternalError, SubmissionRequestError
 
 from .base import XBlockHandlerTestCase, scenario
 
@@ -123,8 +124,20 @@ class SubmissionTest(XBlockHandlerTestCase):
     @scenario('data/line_breaks.xml')
     def test_prompt_line_breaks(self, xblock):
         # Verify that prompts with multiple lines retain line breaks
+        # (backward compatibility in case if prompt_type == 'text')
         resp = self.request(xblock, 'render_submission', json.dumps(dict()))
         expected_prompt = u"<p><br />Line 1</p><p>Line 2</p><p>Line 3<br /></p>"
+        self.assertIn(expected_prompt, resp)
+
+    @scenario('data/prompt_html.xml')
+    def test_prompt_html_to_text(self, xblock):
+        resp = self.request(xblock, 'render_submission', json.dumps(dict()))
+        expected_prompt = u"<code><strong>Question 123</strong></code>"
+        self.assertIn(expected_prompt, resp)
+
+        xblock.prompts_type = "text"
+        resp = self.request(xblock, 'render_submission', json.dumps(dict()))
+        expected_prompt = "&lt;code&gt;&lt;strong&gt;Question 123&lt;/strong&gt;&lt;/code&gt;"
         self.assertIn(expected_prompt, resp)
 
     @mock_s3
@@ -182,7 +195,7 @@ class SubmissionTest(XBlockHandlerTestCase):
     )
     @scenario('data/file_upload_scenario.xml')
     def test_download_url_non_existing_file(self, xblock):
-        """ Test generate a download URL for non-existing file, should return empty string """
+        """ For non-existing file, a valid url will be returned, but it will 404 when followed. """
         resp = self.request(xblock, 'download_url', json.dumps(dict()), response_format='json')
 
         self.assertTrue(resp['success'])
@@ -207,11 +220,10 @@ class SubmissionTest(XBlockHandlerTestCase):
             course_id='test_course',
             anonymous_student_id='test_student',
         )
-
         download_url = api.get_download_url("test_student/test_course/" + xblock.scope_ids.usage_id)
         resp = self.request(xblock, 'download_url', json.dumps(dict()), response_format='json')
         self.assertTrue(resp['success'])
-        self.assertEqual(download_url, resp['url'])
+        self.assertTrue(resp['url'].startswith(download_url))
 
         resp = self.request(xblock, 'remove_all_uploaded_files', json.dumps(dict()), response_format='json')
         self.assertTrue(resp['success'])
@@ -266,7 +278,8 @@ class SubmissionRenderTest(XBlockHandlerTestCase):
                 'submission_start': dt.datetime(4999, 4, 1).replace(tzinfo=pytz.utc),
                 'allow_latex': False,
                 'user_timezone': None,
-                'user_language': None
+                'user_language': None,
+                'prompts_type': 'text'
             }
         )
 
@@ -292,7 +305,8 @@ class SubmissionRenderTest(XBlockHandlerTestCase):
                 'self_incomplete': True,
                 'allow_latex': False,
                 'user_timezone': None,
-                'user_language': None
+                'user_language': None,
+                'prompts_type': 'text'
             }
         )
 
@@ -314,7 +328,8 @@ class SubmissionRenderTest(XBlockHandlerTestCase):
                 'submission_due': dt.datetime(2999, 5, 6).replace(tzinfo=pytz.utc),
                 'allow_latex': False,
                 'user_timezone': None,
-                'user_language': None
+                'user_language': None,
+                'prompts_type': 'text'
             }
         )
 
@@ -335,7 +350,8 @@ class SubmissionRenderTest(XBlockHandlerTestCase):
                 'submit_enabled': False,
                 'allow_latex': False,
                 'user_timezone': None,
-                'user_language': None
+                'user_language': None,
+                'prompts_type': 'text'
             }
         )
 
@@ -362,7 +378,8 @@ class SubmissionRenderTest(XBlockHandlerTestCase):
                 'submission_due': dt.datetime(2999, 5, 6).replace(tzinfo=pytz.utc),
                 'allow_latex': False,
                 'user_timezone': None,
-                'user_language': None
+                'user_language': None,
+                'prompts_type': 'text'
             }
         )
 
@@ -389,7 +406,8 @@ class SubmissionRenderTest(XBlockHandlerTestCase):
                 'submission_due': dt.datetime(2999, 5, 6).replace(tzinfo=pytz.utc),
                 'allow_latex': False,
                 'user_timezone': None,
-                'user_language': None
+                'user_language': None,
+                'prompts_type': 'text'
             }
         )
 
@@ -411,7 +429,8 @@ class SubmissionRenderTest(XBlockHandlerTestCase):
                 'self_incomplete': True,
                 'allow_latex': False,
                 'user_timezone': None,
-                'user_language': None
+                'user_language': None,
+                'prompts_type': 'text'
             }
         )
 
@@ -446,7 +465,8 @@ class SubmissionRenderTest(XBlockHandlerTestCase):
                     'cancelled_by': mock_staff
                 },
                 'user_timezone': None,
-                'user_language': None
+                'user_language': None,
+                'prompts_type': 'text'
             }
         )
 
@@ -475,7 +495,8 @@ class SubmissionRenderTest(XBlockHandlerTestCase):
                 'self_incomplete': True,
                 'allow_latex': False,
                 'user_timezone': None,
-                'user_language': None
+                'user_language': None,
+                'prompts_type': 'text'
             }
         )
 
@@ -490,7 +511,8 @@ class SubmissionRenderTest(XBlockHandlerTestCase):
                 'submission_due': dt.datetime(2014, 4, 5).replace(tzinfo=pytz.utc),
                 'allow_latex': False,
                 'user_timezone': None,
-                'user_language': None
+                'user_language': None,
+                'prompts_type': 'text'
             }
         )
 
@@ -512,7 +534,8 @@ class SubmissionRenderTest(XBlockHandlerTestCase):
                 'self_incomplete': True,
                 'allow_latex': False,
                 'user_timezone': None,
-                'user_language': None
+                'user_language': None,
+                'prompts_type': 'text'
             }
         )
 
@@ -540,7 +563,8 @@ class SubmissionRenderTest(XBlockHandlerTestCase):
                 'file_upload_type': None,
                 'allow_latex': False,
                 'user_timezone': None,
-                'user_language': None
+                'user_language': None,
+                'prompts_type': 'text'
             }
         )
 
@@ -568,7 +592,8 @@ class SubmissionRenderTest(XBlockHandlerTestCase):
                 'file_upload_type': None,
                 'allow_latex': False,
                 'user_timezone': None,
-                'user_language': None
+                'user_language': None,
+                'prompts_type': 'text'
             }
         )
 

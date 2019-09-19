@@ -1,10 +1,10 @@
-from .base import BaseBackend
-from .. import exceptions
-
 from django.conf import settings
 import django.core.cache
 from django.core.urlresolvers import reverse
 from django.utils.encoding import smart_text
+
+from .. import exceptions
+from .base import BaseBackend
 
 
 class Backend(BaseBackend):

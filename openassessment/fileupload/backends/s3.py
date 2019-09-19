@@ -1,9 +1,12 @@
-import boto
 import logging
+
+import boto
+
 from django.conf import settings
 
-from .base import BaseBackend
 from ..exceptions import FileUploadInternalError
+from .base import BaseBackend
+
 logger = logging.getLogger("openassessment.fileupload.api")
 
 
@@ -45,7 +48,6 @@ class Backend(BaseBackend):
         conn = _connect_to_s3()
         bucket = conn.get_bucket(bucket_name)
         s3_key = bucket.get_key(key_name)
-
         if s3_key:
             bucket.delete_key(s3_key)
             return True

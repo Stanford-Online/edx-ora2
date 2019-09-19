@@ -3,17 +3,14 @@ A mixin for staff grading.
 """
 import logging
 
-from staff_area_mixin import require_course_staff
 from xblock.core import XBlock
 
 from openassessment.assessment.api import staff as staff_api
+from openassessment.assessment.errors import StaffAssessmentInternalError, StaffAssessmentRequestError
 from openassessment.workflow import api as workflow_api
-from openassessment.assessment.errors import (
-    StaffAssessmentRequestError, StaffAssessmentInternalError
-)
+from staff_area_mixin import require_course_staff
 
-from .data_conversion import create_rubric_dict
-from .data_conversion import clean_criterion_feedback, verify_assessment_parameters
+from .data_conversion import clean_criterion_feedback, create_rubric_dict, verify_assessment_parameters
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +30,7 @@ class StaffAssessmentMixin(object):
     @XBlock.json_handler
     @require_course_staff("STUDENT_INFO")
     @verify_assessment_parameters
-    def staff_assess(self, data, suffix=''):
+    def staff_assess(self, data, suffix=''):  # pylint: disable=unused-argument
         """
         Create a staff assessment from a staff submission.
         """
@@ -78,7 +75,7 @@ class StaffAssessmentMixin(object):
             return {'success': True, 'msg': u""}
 
     @XBlock.handler
-    def render_staff_assessment(self, data, suffix=''):
+    def render_staff_assessment(self, data, suffix=''):  # pylint: disable=unused-argument
         """
         Renders the Staff Assessment HTML section of the XBlock
         Generates the staff assessment HTML for the Open
@@ -125,7 +122,9 @@ class StaffAssessmentMixin(object):
             context = {
                 'status_value': self._('Not Available'),
                 'message_title': self._('Waiting for a Staff Grade'),
-                'message_content': self._('Check back later to see if a course staff member has assessed your response. You will receive your grade after the assessment is complete.'),
+                'message_content': self._('Check back later to see if a course staff member has assessed '
+                                          'your response. You will receive your grade after the assessment '
+                                          'is complete.'),
                 'step_classes': 'is--showing',
                 'button_active': 'aria-expanded=true',
             }
@@ -137,7 +136,9 @@ class StaffAssessmentMixin(object):
                     'status_value': self._('Complete'),
                     'icon_class': 'fa-check',
                     'message_title': self._('You Must Complete the Steps Above to View Your Grade'),
-                    'message_content': self._('Although a course staff member has assessed your response, you will receive your grade only after you have completed all the required steps of this problem.'),
+                    'message_content': self._('Although a course staff member has assessed your response, '
+                                              'you will receive your grade only after you have completed '
+                                              'all the required steps of this problem.'),
                     'step_classes': 'is--initially--collapsed',
                     'button_active': 'aria-expanded=false',
                 }

@@ -3,16 +3,14 @@ import logging
 
 from xblock.core import XBlock
 
-from submissions import api
+from data_conversion import create_submission_dict, prepare_submission_for_serialization
 from openassessment.fileupload import api as file_upload_api
 from openassessment.fileupload.exceptions import FileUploadError
 from openassessment.workflow.errors import AssessmentWorkflowError
+from validation import validate_submission
 
 from .resolve_dates import DISTANT_FUTURE
 from .user_data import get_user_preferences
-
-from data_conversion import create_submission_dict, prepare_submission_for_serialization
-from validation import validate_submission
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +49,7 @@ class SubmissionMixin(object):
     ]
 
     @XBlock.json_handler
-    def submit(self, data, suffix=''):
+    def submit(self, data, suffix=''):  # pylint: disable=unused-argument
         """Place the submission text into Openassessment system
 
         Allows submission of new responses.  Performs basic workflow validation
@@ -70,6 +68,8 @@ class SubmissionMixin(object):
                 associated status tag (str), and status text (unicode).
 
         """
+        # Import is placed here to avoid model import at project startup.
+        from submissions import api
         if 'submission' not in data:
             return (
                 False,
@@ -153,7 +153,7 @@ class SubmissionMixin(object):
         return status, status_tag, status_text
 
     @XBlock.json_handler
-    def save_submission(self, data, suffix=''):
+    def save_submission(self, data, suffix=''):  # pylint: disable=unused-argument
         """
         Save the current student's response submission.
         If the student already has a response saved, this will overwrite it.
@@ -193,7 +193,7 @@ class SubmissionMixin(object):
             return {'success': False, 'msg': self._(u"This response was not submitted.")}
 
     @XBlock.json_handler
-    def save_files_descriptions(self, data, suffix=''):
+    def save_files_descriptions(self, data, suffix=''):  # pylint: disable=unused-argument
         """
         Save the descriptions for each uploaded file.
 
@@ -226,6 +226,8 @@ class SubmissionMixin(object):
         return {'success': False, 'msg': self._(u"Files descriptions were not submitted.")}
 
     def create_submission(self, student_item_dict, student_sub_data, files_descriptions=None):
+        # Import is placed here to avoid model import at project startup.
+        from submissions import api
 
         # Store the student's response text in a JSON-encodable dict
         # so that later we can add additional response fields.
@@ -401,24 +403,20 @@ class SubmissionMixin(object):
         """
         urls = []
         if 'file_keys' in submission['answer']:
-            keys = submission['answer'].get('file_keys', [])
+            file_keys = submission['answer'].get('file_keys', [])
             descriptions = submission['answer'].get('files_descriptions', [])
-            for idx, key in enumerate(keys):
-                url = self._get_url_by_file_key(key)
-                if url:
-                    description = ''
-                    try:
-                        description = descriptions[idx]
-                    except IndexError:
-                        pass
-                    urls.append((url, description))
+            for idx, key in enumerate(file_keys):
+                file_download_url = self._get_url_by_file_key(key)
+                if file_download_url:
+                    file_description = descriptions[idx].strip() if idx < len(descriptions) else ''
+                    urls.append((file_download_url, file_description))
                 else:
                     break
         elif 'file_key' in submission['answer']:
             key = submission['answer'].get('file_key', '')
-            url = self._get_url_by_file_key(key)
-            if url:
-                urls.append((url, ''))
+            file_download_url = self._get_url_by_file_key(key)
+            if file_download_url:
+                urls.append((file_download_url, ''))
         return urls
 
     @staticmethod
@@ -438,6 +436,8 @@ class SubmissionMixin(object):
                 the front end.
 
         """
+        # Import is placed here to avoid model import at project startup.
+        from submissions import api
         try:
             return api.get_submission(submission_uuid)
         except api.SubmissionRequestError:
@@ -456,7 +456,7 @@ class SubmissionMixin(object):
             u'This response has not been saved.')
 
     @XBlock.handler
-    def render_submission(self, data, suffix=''):
+    def render_submission(self, data, suffix=''):  # pylint: disable=unused-argument
         """Renders the Submission HTML section of the XBlock
 
         Generates the submission HTML for the first section of an Open
@@ -498,6 +498,7 @@ class SubmissionMixin(object):
             "xblock_id": self.get_xblock_id(),
             "text_response": self.text_response,
             "file_upload_response": self.file_upload_response,
+            "prompts_type": self.prompts_type,
         }
 
         # Due dates can default to the distant future, in which case

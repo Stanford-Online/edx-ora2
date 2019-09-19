@@ -125,13 +125,15 @@ OpenAssessment.ResponseView.prototype = {
                 eventObject.preventDefault();
                 var previouslyUploadedFiles = sel.find('.submission__answer__file').length ? true : false;
                 $('.submission__answer__display__file', view.element).removeClass('is--hidden');
-                if (previouslyUploadedFiles) {
-                    var msg = gettext('After you upload new files all your previously uploaded files will be overwritten. Continue?');  // jscs:ignore maximumLineLength
-                    if (confirm(msg)) {
+                if (view.hasAllUploadFiles()) {
+                    if (previouslyUploadedFiles) {
+                        var msg = gettext('After you upload new files all your previously uploaded files will be overwritten. Continue?');  // jscs:ignore maximumLineLength
+                        if (confirm(msg)) {
+                            view.uploadFiles();
+                        }
+                    } else {
                         view.uploadFiles();
                     }
-                } else {
-                    view.uploadFiles();
                 }
             }
         );
@@ -259,7 +261,32 @@ OpenAssessment.ResponseView.prototype = {
     previewEnabled: function(enabled) {
         return this.baseView.buttonEnabled('.submission__preview', enabled);
     },
-
+    /**
+      Check if there is a file selected but not uploaded yet
+      Returns:
+      boolean: if we have pending files or not.
+     **/
+    hasPendingUploadFiles: function() {
+        return this.files !== null && !this.filesUploaded;
+    },
+    /**
+     Check if there is a selected file moved or deleted before uploading
+     Returns:
+     boolean: if we have deleted/moved files or not.
+     **/
+    hasAllUploadFiles: function() {
+        for (var i = 0; i < this.files.length; i++) {
+            var file = this.files[i];
+            if (file.size === 0) {
+                this.baseView.toggleActionError(
+                    'upload',
+                    gettext("Your file " + file.name + " has been deleted or path has been changed."));
+                this.submitEnabled(true);
+                return false;
+            }
+        }
+        return true;
+    },
     /**
      Set the save status message.
      Retrieve the save status message.
@@ -422,17 +449,18 @@ OpenAssessment.ResponseView.prototype = {
         var baseView = this.baseView;
         var fileDefer = $.Deferred();
 
-        // check if there is a file selected but not uploaded yet
-        if (view.files !== null && !view.filesUploaded) {
-            var msg = gettext('Do you want to upload your file before submitting?');
-            if (confirm(msg)) {
-                fileDefer = view.uploadFiles();
-                if (fileDefer === false) {
-                    return;
-                }
-            } else {
-                view.submitEnabled(true);
+        if (view.hasPendingUploadFiles()) {
+            if (!view.hasAllUploadFiles()) {
                 return;
+            }
+            else {
+                var msg = gettext('Do you want to upload your file before submitting?');
+                if (confirm(msg)) {
+                    fileDefer = view.uploadFiles();
+                    if (fileDefer === false) {
+                        return;
+                    }
+                }
             }
         } else {
             fileDefer.resolve();
@@ -533,7 +561,6 @@ OpenAssessment.ResponseView.prototype = {
         var fileType = null;
         var fileName = '';
         var errorCheckerTriggered = false;
-        var sel = $('.step--response', this.element);
 
         for (var i = 0; i < files.length; i++) {
             totalSize += files[i].size;
@@ -582,12 +609,14 @@ OpenAssessment.ResponseView.prototype = {
 
         if (!errorCheckerTriggered) {
             this.baseView.toggleActionError('upload', null);
-            this.files = files;
+            if (files.length > 0) {
+                this.files = files;
+            }
             this.updateFilesDescriptionsFields(files, descriptions, uploadType);
         }
 
         if (this.files === null) {
-            sel.find('.file__upload').prop('disabled', true);
+            $(this.element).find('.file__upload').prop('disabled', true);
         }
     },
 
@@ -666,7 +695,7 @@ OpenAssessment.ResponseView.prototype = {
         var filesDescriptions = [];
 
         $(this.element).find('.file__description').each(function() {
-            var filesDescriptionVal = $(this).val();
+            var filesDescriptionVal = $.trim($(this).val());
             if (filesDescriptionVal) {
                 filesDescriptions.push(filesDescriptionVal);
             } else {

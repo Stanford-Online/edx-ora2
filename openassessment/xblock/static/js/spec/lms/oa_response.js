@@ -626,6 +626,10 @@ describe("OpenAssessment.ResponseView", function() {
         function getFileUploadField() {
             return $(view.element).find('.file__upload').first();
         }
+        function expectFileUploadButton(disabled) {
+            view.checkFilesDescriptions();
+            expect(getFileUploadField().is(':disabled')).toEqual(disabled);
+        }
 
         spyOn(view, 'updateFilesDescriptionsFields').and.callThrough();
         var files = [{type: 'image/jpeg', size: 1024, name: 'picture1.jpg', data: ''},
@@ -634,26 +638,36 @@ describe("OpenAssessment.ResponseView", function() {
 
         expect(getFileUploadField().is(':disabled')).toEqual(true);
         expect(view.updateFilesDescriptionsFields).toHaveBeenCalledWith(files, undefined, 'image');
-
-        // set the first description field (the second is still empty)
-        // and check that upload button is disabled
         var firstDescriptionField1 = $(view.element).find('.file__description__0').first();
-        $(firstDescriptionField1).val('test');
-        view.checkFilesDescriptions();
-        expect(getFileUploadField().is(':disabled')).toEqual(true);
-
-        // set the second description field (now both descriptions are not empty)
-        // and check that upload button is enabled
         var firstDescriptionField2 = $(view.element).find('.file__description__1').first();
+
+        // Only set the first description field and the second field remain empty.
+        // and check that upload button is disabled
+        $(firstDescriptionField1).val('test1');
+        $(firstDescriptionField2).val('');
+        expectFileUploadButton(true);
+
+        // Set the second description field to be only spaces (given first description has value).
+        // and check that upload button is disabled
+        $(firstDescriptionField2).val('  ');
+        expectFileUploadButton(true)
+
+        // Set the both description fields to contain only spaces.
+        // and check that upload button is disabled
+        $(firstDescriptionField1).val(' ');
+        $(firstDescriptionField2).val(' ');
+        expectFileUploadButton(true)
+
+        // set the both description field to contain non empty values.
+        // and check that upload button is enabled
+        $(firstDescriptionField1).val('test1');
         $(firstDescriptionField2).val('test2');
-        view.checkFilesDescriptions();
-        expect(getFileUploadField().is(':disabled')).toEqual(false);
+        expectFileUploadButton(false)
 
         // remove value in the first upload field
         // and check that upload button is disabled
         $(firstDescriptionField1).val('');
-        view.checkFilesDescriptions();
-        expect(getFileUploadField().is(':disabled')).toEqual(true);
+        expectFileUploadButton(true)
     });
 
     it("removes description fields after files upload", function() {
@@ -664,5 +678,44 @@ describe("OpenAssessment.ResponseView", function() {
 
         view.uploadFiles();
         expect($(view.element).find('.file__description').length).toEqual(0);
+    });
+
+    it("prevents user from submitting response when files selection is cancelled", function() {
+        // Set fileupload to be required.
+        view.fileUploadResponse = 'required';
+
+        // Change the response text
+        view.response(['Lorem ipsum 1', 'Lorem ipsum 2']);
+        view.handleResponseChanged();
+        // Expect the unsaved warning to be enabled and save progress button is enabled.
+        expect(view.saveEnabled()).toBe(true);
+        expect(view.saveStatus()).toContain('This response has not been saved.');
+
+        // Assume user has selected no files (cancelled the file select pop-up) the event will
+        // trigger with no files selected. Expect Submit response button is disabled.
+        view.prepareUpload([], 'image', []);
+
+        expect(view.submitEnabled()).toBe(false);
+
+        // Expect there are no pending upload files & file upload button is disabled.
+        expect(view.hasPendingUploadFiles()).toEqual(false);
+        expect(view.files).toEqual(null);
+        expect($(view.element).find('.file__upload').first().is(':disabled')).toEqual(true);
+    });
+
+     it("prevents user from uploading files when file is moved or deleted", function() {
+
+         spyOn(view.baseView, 'toggleActionError').and.callThrough();
+         view.fileUploadResponse = 'optional';
+
+         var file = [{type: 'image/jpeg', size: 0, name: 'picture.jpg', data: ''}];
+         view.prepareUpload(file, 'image', ['test1']);
+         view.uploadFiles();
+
+         expect(view.hasAllUploadFiles()).toEqual(false);
+         expect(view.baseView.toggleActionError).toHaveBeenCalledWith('upload',
+            "Your file " + file[0].name + " has been deleted or path has been changed.");
+
+
     });
 });
